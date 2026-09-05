@@ -88,6 +88,7 @@ const Sidebar = () => {
       { name: 'Approvals Queue', path: '/approvals', icon: CheckSquare },
       { name: 'Fulfillment Splitting', path: '/fulfillment', icon: Truck },
       { name: 'Subscriptions', path: '/subscriptions', icon: Repeat },
+      { name: 'Invoices', path: '/invoices', icon: DollarSign },
       { name: 'Deal Health', path: '/deal-health', icon: Activity },
       { name: 'Reports & Analytics', path: '/reports', icon: BarChart3 },
     ];

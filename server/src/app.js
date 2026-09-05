@@ -6,6 +6,12 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const quotationRoutes = require('./routes/quotationRoutes');
+const approvalRoutes = require('./routes/approvalRoutes');
+const fulfillmentRoutes = require('./routes/fulfillmentRoutes');
+const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
 
 const app = express();
 
@@ -24,6 +30,12 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/quotations', quotationRoutes);
+app.use('/api/approvals', approvalRoutes);
+app.use('/api/fulfillment', fulfillmentRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // 404 Route Not Found Handler
 app.use(notFound);

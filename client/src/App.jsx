@@ -14,12 +14,24 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 const Login = lazy(() => import('./pages/auth/Login'));
 const Signup = lazy(() => import('./pages/auth/Signup'));
 const Workspace = lazy(() => import('./pages/dashboard/Workspace'));
+const QuotationsList = lazy(() => import('./pages/quotations/QuotationsList'));
+const QuotationDetail = lazy(() => import('./pages/quotations/QuotationDetail'));
 const ApprovalsQueue = lazy(() => import('./pages/approvals/ApprovalsQueue'));
+const ApprovalDetail = lazy(() => import('./pages/approvals/ApprovalDetail'));
+const FulfillmentSplitting = lazy(() => import('./pages/fulfillment/FulfillmentSplitting'));
+const FulfillmentDetail = lazy(() => import('./pages/fulfillment/FulfillmentDetail'));
 const Subscriptions = lazy(() => import('./pages/subscriptions/Subscriptions'));
+const SubscriptionDetail = lazy(() => import('./pages/subscriptions/SubscriptionDetail'));
+const InvoicesList = lazy(() => import('./pages/invoices/InvoicesList'));
+const InvoiceDetail = lazy(() => import('./pages/invoices/InvoiceDetail'));
+const DealHealth = lazy(() => import('./pages/deal-health/DealHealth'));
+const ReportsAnalytics = lazy(() => import('./pages/reports/ReportsAnalytics'));
 const AdminSetup = lazy(() => import('./pages/backend/AdminSetup'));
 const CustomerPortal = lazy(() => import('./pages/customer-portal/CustomerPortal'));
 
 function App() {
+  const ALL_INTERNAL_ROLES = ['sales_rep', 'sales_manager', 'finance', 'admin'];
+
   return (
     <ErrorBoundary>
       <Provider store={store}>
@@ -62,24 +74,22 @@ function App() {
                 {/* Protected Internal & Customer Routes */}
                 <Route element={<ProtectedRoute />}>
                   <Route element={<MainLayout />}>
-                    {/* Sales Rep & Manager Workspace */}
-                    <Route element={<RoleRoute allowedRoles={['sales_rep', 'sales_manager', 'admin']} />}>
+                    {/* Internal User Workspace Routes (All Internal Roles Allowed) */}
+                    <Route element={<RoleRoute allowedRoles={ALL_INTERNAL_ROLES} />}>
                       <Route path="/workspace" element={<Workspace />} />
-                      <Route path="/quotations" element={<Workspace />} />
-                      <Route path="/deal-health" element={<Workspace />} />
-                      <Route path="/reports" element={<Workspace />} />
-                    </Route>
-
-                    {/* Manager Approvals Queue */}
-                    <Route element={<RoleRoute allowedRoles={['sales_manager', 'admin']} />}>
+                      <Route path="/quotations" element={<QuotationsList />} />
+                      <Route path="/quotations/:id" element={<QuotationDetail />} />
                       <Route path="/approvals" element={<ApprovalsQueue />} />
-                    </Route>
-
-                    {/* Finance Invoices & Subscriptions */}
-                    <Route element={<RoleRoute allowedRoles={['finance', 'admin']} />}>
-                      <Route path="/billing" element={<Subscriptions />} />
+                      <Route path="/approvals/:id" element={<ApprovalDetail />} />
+                      <Route path="/fulfillment" element={<FulfillmentSplitting />} />
+                      <Route path="/fulfillment/:id" element={<FulfillmentDetail />} />
                       <Route path="/subscriptions" element={<Subscriptions />} />
-                      <Route path="/fulfillment" element={<Subscriptions />} />
+                      <Route path="/subscriptions/:id" element={<SubscriptionDetail />} />
+                      <Route path="/invoices" element={<InvoicesList />} />
+                      <Route path="/invoices/:id" element={<InvoiceDetail />} />
+                      <Route path="/billing" element={<InvoicesList />} />
+                      <Route path="/deal-health" element={<DealHealth />} />
+                      <Route path="/reports" element={<ReportsAnalytics />} />
                     </Route>
 
                     {/* Admin Backend Setup */}
@@ -88,7 +98,7 @@ function App() {
                     </Route>
 
                     {/* Customer Portal */}
-                    <Route element={<RoleRoute allowedRoles={['customer', 'sales_rep', 'admin']} />}>
+                    <Route element={<RoleRoute allowedRoles={['customer', ...ALL_INTERNAL_ROLES]} />}>
                       <Route path="/portal" element={<CustomerPortal />} />
                     </Route>
                   </Route>
