@@ -45,7 +45,7 @@ const ApprovalDetail = () => {
   const currentRole = (role || 'sales_rep').toLowerCase();
   const currentStage = approval.stage || (approval.stepper?.find(s => s.status === 'ACTIVE')?.label || 'Sales Manager');
 
-  // Permission evaluation rules
+  // Permission evaluation rules: Sequential 2-tier approval workflow
   const canPerformAction =
     currentRole === 'admin' ||
     (currentRole === 'sales_manager' && (currentStage === 'Sales Manager' || approval.status === 'PENDING_APPROVAL')) ||

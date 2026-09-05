@@ -85,9 +85,9 @@ let subscriptionsStore = [
 const getSubscriptions = async (req, res) => {
   try {
     const counts = {
-      active: 18,
-      paused: 2,
-      cancelled: 3
+      active: subscriptionsStore.filter((s) => (s.status || '').toLowerCase() === 'active').length,
+      paused: subscriptionsStore.filter((s) => (s.status || '').toLowerCase() === 'paused').length,
+      cancelled: subscriptionsStore.filter((s) => (s.status || '').toLowerCase() === 'cancelled').length
     };
 
     res.json({

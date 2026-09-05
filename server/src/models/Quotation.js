@@ -25,7 +25,7 @@ const quotationSchema = new mongoose.Schema(
     riskLevel: { type: String, enum: ['LOW', 'MEDIUM', 'HIGH'], default: 'LOW' },
     status: {
       type: String,
-      enum: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'NEGOTIATION', 'CONFIRMED', 'REJECTED'],
+      enum: ['DRAFT', 'PENDING_APPROVAL', 'PENDING_FINANCE', 'REVISION_REQUESTED', 'APPROVED', 'NEGOTIATION', 'CONFIRMED', 'REJECTED'],
       default: 'DRAFT'
     },
     ceilingViolation: { type: String, default: null },

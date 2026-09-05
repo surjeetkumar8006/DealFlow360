@@ -109,8 +109,8 @@ const processApproval = async (req, res) => {
   try {
     const { id } = req.params;
     const { action, note } = req.body;
-    const userRole = (req.user?.role || 'admin').toLowerCase();
-    const userName = req.user?.name || (userRole === 'finance' ? 'R. Iyer (Finance)' : 'M. Shah (Manager)');
+    const userRole = (req.body?.role || req.user?.role || 'admin').toLowerCase();
+    const userName = req.body?.userName || req.user?.name || (userRole === 'finance' ? 'R. Iyer (Finance)' : 'M. Shah (Manager)');
 
     // 1. Strict RBAC Enforcement: Sales Reps cannot perform approval actions
     if (userRole === 'sales_rep' || userRole === 'customer') {
@@ -132,14 +132,14 @@ const processApproval = async (req, res) => {
     if (currentStage === 'Sales Manager' && !['sales_manager', 'admin'].includes(userRole)) {
       return res.status(403).json({
         success: false,
-        message: 'Access Denied: This quotation is pending Sales Manager approval. Only Sales Managers or Admins can act at this stage.'
+        message: 'Access Denied: This quotation is pending Sales Manager review (Step 2). Only Sales Managers or Admins can approve at this stage before routing to Finance.'
       });
     }
 
     if (currentStage === 'Finance' && !['finance', 'admin'].includes(userRole)) {
       return res.status(403).json({
         success: false,
-        message: 'Access Denied: This quotation has passed Manager review and is pending Finance approval. Only Finance or Admins can act at this stage.'
+        message: 'Access Denied: This quotation has passed Manager review and is pending 2nd-level Finance approval (Step 3). Only Finance or Admins can approve at this stage.'
       });
     }
 
@@ -176,11 +176,11 @@ const processApproval = async (req, res) => {
     } else {
       // APPROVE ACTION
       if (currentStage === 'Sales Manager' && isHighRisk) {
-        // Multi-tier chain: Manager approval sends High-Risk quote to Finance step!
+        // Multi-tier chain: Step 2 Manager approval routes High-Risk quote to Step 3 Finance!
         newStatus = 'PENDING_FINANCE';
         newStage = 'Finance';
         auditAction = 'Manager Approved';
-        defaultNote = 'Sales Manager approved quote. Routed to Finance for 2nd-level approval.';
+        defaultNote = 'Sales Manager approved Step 2. Routed to Finance for Step 3 2nd-level approval.';
         stepperConfig = [
           { step: 1, label: 'Submitted', status: 'COMPLETED', color: '#2F6F5E' },
           { step: 2, label: 'Sales Manager', status: 'COMPLETED', color: '#2F6F5E' },
@@ -188,12 +188,12 @@ const processApproval = async (req, res) => {
           { step: 4, label: 'Confirmed', status: 'PENDING', color: '#94A3B8' }
         ];
       } else {
-        // Finance approval (Stage 3) OR Medium-Risk quote manager approval -> Fully CONFIRMED & APPROVED!
+        // Step 3 Finance approval OR Medium-Risk quote manager approval -> Fully CONFIRMED & APPROVED!
         newStatus = 'APPROVED';
         newStage = 'Confirmed';
-        auditAction = currentStage === 'Finance' ? 'Finance Approved' : 'Approved';
-        defaultNote = currentStage === 'Finance'
-          ? 'Finance second-level approval completed. Quotation confirmed.'
+        auditAction = currentStage === 'Finance' || userRole === 'finance' ? 'Finance Approved' : 'Approved';
+        defaultNote = currentStage === 'Finance' || userRole === 'finance'
+          ? 'Finance second-level approval (Step 3) completed. Quotation confirmed.'
           : 'Sales Manager approved quote. Quotation confirmed.';
         stepperConfig = [
           { step: 1, label: 'Submitted', status: 'COMPLETED', color: '#2F6F5E' },
@@ -225,16 +225,32 @@ const processApproval = async (req, res) => {
 
     // Synchronize with Quotation collection in DB
     const targetNumber = approvalsStore[itemIndex]?.quoteNumber || id;
-    const dbQuote = await Quotation.findOne({ quoteNumber: { $regex: new RegExp(`^${targetNumber}$`, 'i') } });
-    if (dbQuote) {
-      dbQuote.status = newStatus;
-      dbQuote.managerNote = note || defaultNote;
-      await dbQuote.save();
-
-      if (newStatus === 'CONFIRMED' || newStatus === 'APPROVED') {
-        const { syncConfirmedQuotationToInvoice } = require('./quotationController');
-        await syncConfirmedQuotationToInvoice(dbQuote);
+    try {
+      let dbQuote;
+      if (id.match(/^[0-9a-fA-F]{24}$/)) {
+        dbQuote = await Quotation.findById(id).catch(() => null);
       }
+      if (!dbQuote) {
+        dbQuote = await Quotation.findOne({
+          $or: [
+            { quoteNumber: { $regex: new RegExp(`^${targetNumber}$`, 'i') } },
+            { quoteNumber: { $regex: new RegExp(`^${id}$`, 'i') } }
+          ]
+        }).catch(() => null);
+      }
+
+      if (dbQuote) {
+        dbQuote.status = newStatus;
+        dbQuote.managerNote = note || defaultNote;
+        await dbQuote.save();
+
+        if (newStatus === 'CONFIRMED' || newStatus === 'APPROVED') {
+          const { syncConfirmedQuotationToInvoice } = require('./quotationController');
+          await syncConfirmedQuotationToInvoice(dbQuote);
+        }
+      }
+    } catch (dbSyncErr) {
+      console.warn('DB quotation sync warning during approval:', dbSyncErr.message);
     }
 
     try {

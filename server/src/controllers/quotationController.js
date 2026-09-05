@@ -6,9 +6,18 @@ const Invoice = require('../models/Invoice');
 // Helper function to sync a confirmed quotation to Invoice collection
 const syncConfirmedQuotationToInvoice = async (quote) => {
   try {
-    if (quote.status !== 'CONFIRMED') return;
+    if (!['CONFIRMED', 'APPROVED'].includes(quote.status)) return;
 
-    const existingInvoice = await Invoice.findOne({ orderRef: quote.quoteNumber });
+    const targetRef = quote.quoteNumber;
+    const invNum = `INV-${targetRef.replace('Q-', '')}`;
+
+    const existingInvoice = await Invoice.findOne({
+      $or: [
+        { orderRef: targetRef },
+        { invoiceNumber: invNum }
+      ]
+    });
+
     const formattedAmount = `$${Number(quote.totalAmount || 0).toLocaleString()}`;
     const invoiceItems = (quote.lineItems || []).map((item) => ({
       product: item.product,
@@ -17,27 +26,31 @@ const syncConfirmedQuotationToInvoice = async (quote) => {
     }));
 
     if (existingInvoice) {
-      existingInvoice.amount = formattedAmount;
-      existingInvoice.numericAmount = quote.totalAmount;
-      existingInvoice.customer = quote.customerName;
-      existingInvoice.items = invoiceItems;
-      await existingInvoice.save();
+      const updateData = {
+        amount: formattedAmount,
+        numericAmount: quote.totalAmount,
+        customer: quote.customerName
+      };
+      if (invoiceItems.length > 0) {
+        updateData.items = invoiceItems;
+      }
+      await Invoice.updateOne({ _id: existingInvoice._id }, { $set: updateData });
     } else {
-      const invNum = `INV-${quote.quoteNumber.replace('Q-', '')}`;
       await Invoice.create({
         invoiceNumber: invNum,
         customer: quote.customerName,
         amount: formattedAmount,
         numericAmount: quote.totalAmount,
         status: 'Unpaid',
-        dueDate: 'In 30 Days',
-        orderRef: quote.quoteNumber,
+        dueDate: 'Sep 25',
+        createdDate: 'Aug 24, 2026',
+        orderRef: targetRef,
         deliveryStatus: 'Order Confirmed - Split Allocation Pending',
         items: invoiceItems
       });
     }
   } catch (err) {
-    console.error(`Failed to sync quote ${quote.quoteNumber} to invoice:`, err);
+    console.error(`Failed to sync quote ${quote.quoteNumber} to invoice:`, err.message);
   }
 };
 

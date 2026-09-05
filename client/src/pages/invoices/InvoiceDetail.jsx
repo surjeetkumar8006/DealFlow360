@@ -61,6 +61,19 @@ const InvoiceDetail = () => {
     fetchDetail();
   }, [id]);
 
+  const handleApproveInvoice = async () => {
+    try {
+      await api.post(`/invoices/${invoice.id || invoice._id}/approve`).catch(() => null);
+      setInvoice((prev) => ({
+        ...prev,
+        approvalStatus: 'APPROVED'
+      }));
+      toast.success(`Invoice ${invoice.invoiceNumber} approved for release!`);
+    } catch (err) {
+      toast.error('Failed to approve invoice');
+    }
+  };
+
   const handleRecordPayment = async () => {
     try {
       await api.post(`/invoices/${invoice.id || invoice._id}/pay`).catch(() => null);
@@ -293,6 +306,16 @@ const InvoiceDetail = () => {
 
       {/* Action Buttons */}
       <div className="flex flex-wrap items-center gap-3 pt-2">
+        {invoice.approvalStatus !== 'APPROVED' && (
+          <button
+            onClick={handleApproveInvoice}
+            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-xs"
+          >
+            <Check className="w-4 h-4" />
+            Approve Invoice (Finance Release)
+          </button>
+        )}
+
         <button
           onClick={handleRecordPayment}
           disabled={invoice.status === 'Paid'}

@@ -63,6 +63,7 @@ const Sidebar = () => {
       return [
         { name: 'Dashboard', path: '/workspace', icon: LayoutDashboard },
         { name: 'Invoices & Payments', path: '/billing', icon: DollarSign },
+        { name: 'Approvals Queue', path: '/approvals', icon: CheckSquare },
         { name: 'Subscriptions', path: '/subscriptions', icon: Repeat },
         { name: 'Fulfillment Splitting', path: '/fulfillment', icon: Truck },
         { name: 'Products Catalog', path: '/products', icon: Package },

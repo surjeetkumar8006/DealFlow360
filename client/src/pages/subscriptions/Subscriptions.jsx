@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowRight, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -6,13 +6,6 @@ import api from '../../services/api';
 
 const Subscriptions = () => {
   const navigate = useNavigate();
-
-  // Status counts matching Wireframe 9
-  const [counts, setCounts] = useState({
-    active: 18,
-    paused: 2,
-    cancelled: 3
-  });
 
   // Table dataset matching Wireframe 9
   const [subscriptions, setSubscriptions] = useState([
@@ -22,6 +15,14 @@ const Subscriptions = () => {
     { id: 'sub-4', customer: 'Nova Retail', plan: 'Cloud POS Sync', cycle: 'Yearly', nextBill: 'Dec 10', status: 'Active' },
     { id: 'sub-5', customer: 'Zenith Co', plan: '24/7 Priority Support', cycle: 'Monthly', nextBill: '-', status: 'Cancelled' }
   ]);
+
+  // Dynamically calculate status counts without flickering
+  const counts = useMemo(() => {
+    const active = subscriptions.filter((s) => (s.status || '').toLowerCase() === 'active').length;
+    const paused = subscriptions.filter((s) => (s.status || '').toLowerCase() === 'paused').length;
+    const cancelled = subscriptions.filter((s) => (s.status || '').toLowerCase() === 'cancelled').length;
+    return { active, paused, cancelled };
+  }, [subscriptions]);
 
   const [filter, setFilter] = useState('ALL'); // 'ALL' | 'Active' | 'Paused' | 'Cancelled'
   const [showAddModal, setShowAddModal] = useState(false);
@@ -35,9 +36,6 @@ const Subscriptions = () => {
         const res = await api.get('/subscriptions').catch(() => null);
         if (res && res.data && res.data.data) {
           setSubscriptions(res.data.data);
-        }
-        if (res && res.data && res.data.counts) {
-          setCounts(res.data.counts);
         }
       } catch (err) {
         console.error('Fetch subscriptions error:', err);

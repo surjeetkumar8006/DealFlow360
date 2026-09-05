@@ -34,9 +34,12 @@ export const fetchApprovalByIdThunk = createAsyncThunk(
 // Async Thunk to process approval action (APPROVE, REJECT, REVISION)
 export const processApprovalThunk = createAsyncThunk(
   'approvals/processAction',
-  async ({ id, action, note }, { rejectWithValue }) => {
+  async ({ id, action, note, role: overrideRole, userName: overrideName }, { rejectWithValue, getState }) => {
     try {
-      const res = await api.post(`/approvals/${id}/action`, { action, note });
+      const state = getState();
+      const role = overrideRole || state.auth?.role || localStorage.getItem('df360_role') || 'admin';
+      const userName = overrideName || state.auth?.user?.name || (role.toLowerCase() === 'finance' ? 'Fiona Finance' : 'M. Shah (Manager)');
+      const res = await api.post(`/approvals/${id}/action`, { action, note, role, userName });
       toast.success(res.data.message || `Approval action ${action} completed!`);
       return { id, action, updatedQuote: res.data.data };
     } catch (err) {

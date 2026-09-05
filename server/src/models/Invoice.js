@@ -13,6 +13,11 @@ const invoiceSchema = new mongoose.Schema(
     amount: { type: String, required: true },
     numericAmount: { type: Number, required: true },
     status: { type: String, enum: ['Unpaid', 'Paid', 'Partial'], default: 'Unpaid' },
+    approvalStatus: {
+      type: String,
+      enum: ['APPROVED', 'PENDING_APPROVAL', 'PENDING_FINANCE', 'AUTO_APPROVED', 'REJECTED'],
+      default: 'APPROVED'
+    },
     dueDate: { type: String, default: 'In 30 Days' },
     createdDate: { type: String, default: () => new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) },
     orderRef: { type: String },
