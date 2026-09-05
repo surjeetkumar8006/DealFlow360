@@ -163,7 +163,7 @@ const ApprovalsQueue = () => {
       {/* Approval Detail & Audit Trail Modal */}
       {selectedApproval && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#FAF9F5] border border-[var(--steel-line)] rounded-xl max-w-xl w-full p-6 space-y-6 shadow-2xl">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-xl w-full p-6 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-[var(--paper-dim)]">
               <div>
                 <h2 className="text-lg font-semibold text-[var(--text)]">

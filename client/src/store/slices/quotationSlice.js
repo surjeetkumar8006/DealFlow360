@@ -61,144 +61,25 @@ export const updateQuotationStatusThunk = createAsyncThunk(
   }
 );
 
-const initialState = {
-  activeQuotation: {
-    _id: 'q-1042',
-    quoteNumber: 'Q-1042',
-    customerName: 'Acme Corp',
-    customerTier: 'Silver',
-    salesRep: 'Surjeet Kumar',
-    priceList: 'Standard Enterprise 2026',
-    totalAmount: 2970,
-    discountPercentage: 14,
-    riskScore: 18.5,
-    riskLevel: 'HIGH',
-    status: 'PENDING_APPROVAL',
-    ceilingViolation: 'Onsite Setup Service discount 18% exceeds line limit ceiling of 10% by 8 points.',
-    lineItems: [
-      { id: 'l-1', product: 'Laptop Pro 14', qty: 2, price: 1200, discount: 12, limit: 15 },
-      { id: 'l-2', product: 'Onsite Setup Service', qty: 1, price: 450, discount: 18, limit: 10 },
-      { id: 'l-3', product: 'Extended Warranty', qty: 1, price: 180, discount: 10, limit: 15 }
-    ],
-  },
-  quotationsList: [
-    {
-      _id: 'q-1042',
-      quoteNumber: 'Q-1042',
-      customerName: 'Acme Corp',
-      customerTier: 'Silver',
-      salesRep: 'Surjeet Kumar',
-      priceList: 'Standard Enterprise 2026',
-      totalAmount: 2970,
-      discountPercentage: 14,
-      riskScore: 18.5,
-      riskLevel: 'HIGH',
-      status: 'PENDING_APPROVAL',
-      ceilingViolation: 'Onsite Setup Service discount 18% exceeds line limit ceiling of 10% by 8 points.',
-      lineItems: [
-        { id: 'l-1', product: 'Laptop Pro 14', qty: 2, price: 1200, discount: 12, limit: 15 },
-        { id: 'l-2', product: 'Onsite Setup Service', qty: 1, price: 450, discount: 18, limit: 10 },
-        { id: 'l-3', product: 'Extended Warranty', qty: 1, price: 180, discount: 10, limit: 15 }
-      ],
-      createdAt: new Date().toISOString()
-    },
-    {
-      _id: 'q-1001',
-      quoteNumber: 'Q-1001',
-      customerName: 'Acme Corp',
-      customerTier: 'Silver',
-      salesRep: 'Surjeet Kumar',
-      priceList: 'Standard Enterprise 2026',
-      totalAmount: 12400,
-      discountPercentage: 8,
-      riskScore: 4.2,
-      riskLevel: 'LOW',
-      status: 'DRAFT',
-      lineItems: [{ id: 'l-10', product: 'Cloud Workstation License (Monthly)', qty: 10, price: 1240, discount: 8, limit: 15 }],
-      createdAt: new Date().toISOString()
-    },
-    {
-      _id: 'q-1002',
-      quoteNumber: 'Q-1002',
-      customerName: 'Delta LLC',
-      customerTier: 'Bronze',
-      salesRep: 'Rahul Sharma',
-      priceList: 'Standard Retail 2026',
-      totalAmount: 3200,
-      discountPercentage: 4,
-      riskScore: 2.1,
-      riskLevel: 'LOW',
-      status: 'DRAFT',
-      lineItems: [{ id: 'l-11', product: 'Standard Support Package', qty: 1, price: 3200, discount: 4, limit: 5 }],
-      createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
-    },
-    {
-      _id: 'q-1003',
-      quoteNumber: 'Q-1003',
-      customerName: 'Beta Industries',
-      customerTier: 'Gold',
-      salesRep: 'Rahul Sharma',
-      priceList: 'Enterprise Partner 2026',
-      totalAmount: 28900,
-      discountPercentage: 18,
-      riskScore: 18.5,
-      riskLevel: 'HIGH',
-      status: 'PENDING_APPROVAL',
-      ceilingViolation: 'Setup Service discount given is 18% (Allowed Gold tier ceiling is 15%). Exceeds threshold by 3 points.',
-      lineItems: [
-        { id: 'l-12', product: 'Enterprise Server Node', qty: 1, price: 15000, discount: 15, limit: 15 },
-        { id: 'l-13', product: 'Dedicated Migration Service', qty: 1, price: 13900, discount: 18, limit: 10 }
-      ],
-      createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
-    },
-    {
-      _id: 'q-1004',
-      quoteNumber: 'Q-1004',
-      customerName: 'Nova Retail',
-      customerTier: 'Gold',
-      salesRep: 'Priya Verma',
-      priceList: 'Standard Retail 2026',
-      totalAmount: 9750,
-      discountPercentage: 10,
-      riskScore: 5.5,
-      riskLevel: 'LOW',
-      status: 'APPROVED',
-      lineItems: [{ id: 'l-14', product: 'POS Hardware Terminal', qty: 5, price: 1950, discount: 10, limit: 15 }],
-      createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
-    },
-    {
-      _id: 'q-1005',
-      quoteNumber: 'Q-1005',
-      customerName: 'Zenith Co',
-      customerTier: 'Silver',
-      salesRep: 'Surjeet Kumar',
-      priceList: 'Standard Enterprise 2026',
-      totalAmount: 15300,
-      discountPercentage: 12,
-      riskScore: 11.2,
-      riskLevel: 'MEDIUM',
-      status: 'NEGOTIATION',
-      ceilingViolation: 'Portal negotiation active: Customer requested 12% discount.',
-      lineItems: [{ id: 'l-15', product: 'Storage Array Appliance', qty: 2, price: 7650, discount: 12, limit: 10 }],
-      createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
-    },
-    {
-      _id: 'q-1006',
-      quoteNumber: 'Q-1006',
-      customerName: 'Orion Ltd',
-      customerTier: 'Gold',
-      salesRep: 'Priya Verma',
-      priceList: 'Enterprise Partner 2026',
-      totalAmount: 41000,
-      discountPercentage: 15,
-      riskScore: 9.8,
-      riskLevel: 'MEDIUM',
-      status: 'CONFIRMED',
-      lineItems: [{ id: 'l-16', product: 'Data Center Infrastructure Bundle', qty: 1, price: 41000, discount: 15, limit: 15 }],
-      createdAt: new Date(Date.now() - 3600000 * 36).toISOString()
+// Async Thunk to delete a quotation
+export const deleteQuotationThunk = createAsyncThunk(
+  'quotation/delete',
+  async (id, { rejectWithValue }) => {
+    try {
+      const res = await api.delete(`/quotations/${id}`);
+      toast.success(res.data.message || 'Quotation deleted successfully!');
+      return res.data.data;
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete quotation');
+      return rejectWithValue(err.message || 'Failed to delete quotation');
     }
-  ],
-  viewMode: 'BOARD', // 'BOARD' | 'TABLE'
+  }
+);
+
+const initialState = {
+  activeQuotation: null,
+  quotationsList: [],
+  viewMode: 'BOARD',
   loading: false,
   error: null,
 };
@@ -274,6 +155,22 @@ const quotationSlice = createSlice({
         const index = state.quotationsList.findIndex((q) => q._id === updated._id);
         if (index !== -1) {
           state.quotationsList[index] = updated;
+        }
+      })
+
+      // Delete Quotation
+      .addCase(deleteQuotationThunk.fulfilled, (state, action) => {
+        const { id, quoteNumber } = action.payload || {};
+        state.quotationsList = state.quotationsList.filter(
+          (q) => String(q._id) !== String(id) && String(q.id) !== String(id) && q.quoteNumber !== quoteNumber
+        );
+        if (
+          state.activeQuotation &&
+          (String(state.activeQuotation._id) === String(id) ||
+            String(state.activeQuotation.id) === String(id) ||
+            state.activeQuotation.quoteNumber === quoteNumber)
+        ) {
+          state.activeQuotation = null;
         }
       })
 

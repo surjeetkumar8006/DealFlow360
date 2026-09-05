@@ -99,10 +99,33 @@ let priceFieldsStore = [
 // @access Public / Private
 const getProducts = async (req, res) => {
   try {
-    const products = await Product.find().catch(() => null);
-    if (products && products.length > 0) {
-      return res.json({ success: true, data: products, count: products.length });
+    const mongoProducts = await Product.find().catch(() => null);
+    if (mongoProducts && mongoProducts.length > 0) {
+      const formatted = mongoProducts.map((doc) => {
+        const obj = doc.toObject();
+        return {
+          ...obj,
+          id: obj._id ? obj._id.toString() : obj.id,
+          _id: obj._id ? obj._id.toString() : obj.id,
+          price: obj.price || (obj.listPrice ? `$${obj.listPrice}` : '$100'),
+          quantityOnHand: obj.quantityOnHand !== undefined ? obj.quantityOnHand : 50,
+          tax: obj.tax || (obj.taxRate ? `${obj.taxRate}%` : '15%'),
+          unit: obj.unit || 'Each',
+          status: obj.status || 'Active',
+          variants: obj.variants || '-'
+        };
+      });
+
+      // Merge any new in-memory products created in fallback mode
+      for (const storeProd of productsStore) {
+        if (!formatted.some(fp => fp.name.toLowerCase() === storeProd.name.toLowerCase())) {
+          formatted.unshift(storeProd);
+        }
+      }
+
+      return res.json({ success: true, data: formatted, count: formatted.length });
     }
+
     return res.json({ success: true, data: productsStore, count: productsStore.length });
   } catch (error) {
     res.json({ success: true, data: productsStore, count: productsStore.length });
@@ -117,7 +140,10 @@ const getProductById = async (req, res) => {
     const { id } = req.params;
     let product = await Product.findById(id).catch(() => null);
     if (!product) {
-      product = productsStore.find((p) => p.id === id || p._id === id) || productsStore[0];
+      product = productsStore.find((p) => (p.id && p.id.toString() === id) || (p._id && p._id.toString() === id)) || productsStore[0];
+    } else {
+      product = product.toObject();
+      product.id = product._id.toString();
     }
     res.json({ success: true, data: product });
   } catch (error) {
@@ -130,7 +156,11 @@ const getProductById = async (req, res) => {
 // @access Private
 const createProduct = async (req, res) => {
   try {
-    const { name, category, price, listPrice, unit, tax, status, description, sku } = req.body;
+    const { name, category, price, listPrice, unit, tax, status, description, sku, quantityOnHand = 50 } = req.body;
+    const parsedPrice = price || (listPrice ? `$${listPrice}` : '$100');
+    const parsedListPrice = Number(listPrice) || Number(String(price).replace(/[^0-9.]/g, '')) || 100;
+    const parsedStock = Number(quantityOnHand) !== undefined && !isNaN(Number(quantityOnHand)) ? Number(quantityOnHand) : 50;
+
     const newProd = {
       id: `p-${Date.now()}`,
       _id: `p-${Date.now()}`,
@@ -138,33 +168,68 @@ const createProduct = async (req, res) => {
       sku: sku || `SKU-${Date.now()}`,
       category: category || 'Hardware',
       variants: '-',
-      price: price || `$${listPrice || 100}`,
-      listPrice: Number(listPrice) || 100,
-      costPrice: (Number(listPrice) || 100) * 0.6,
+      price: parsedPrice,
+      listPrice: parsedListPrice,
+      costPrice: parsedListPrice * 0.6,
       unit: unit || 'Each',
       tax: tax || '15%',
       status: status || 'Active',
       description: description || '',
       isSubscription: category === 'Subscription',
       recurring: 'Monthly',
-      quantityOnHand: 50,
+      quantityOnHand: parsedStock,
       createdAt: new Date().toISOString()
     };
     productsStore.unshift(newProd);
 
+    // Sync with warehouse stock inventory
+    try {
+      const { stockInventory } = require('./fulfillmentController');
+      const existingStock = stockInventory.find(s => s.product.toLowerCase() === newProd.name.toLowerCase());
+      if (!existingStock) {
+        stockInventory.unshift({
+          id: `st-${Date.now()}`,
+          warehouse: 'Main Warehouse',
+          product: newProd.name,
+          inStock: parsedStock,
+          reserved: 0,
+          available: parsedStock
+        });
+      } else {
+        existingStock.inStock = parsedStock;
+        existingStock.available = Math.max(0, parsedStock - existingStock.reserved);
+      }
+    } catch (e) {
+      console.warn('Warehouse stock sync warning:', e.message);
+    }
+
     // Save to Mongo if DB connected
-    await Product.create({
+    const mongoDoc = await Product.create({
       name: newProd.name,
       sku: newProd.sku,
-      category: (newProd.category || 'Hardware').toUpperCase(),
+      category: newProd.category,
       listPrice: newProd.listPrice,
       costPrice: newProd.costPrice,
       unit: newProd.unit,
-      description: newProd.description
-    }).catch(() => null);
+      taxRate: Number(String(tax).replace(/[^0-9.]/g, '')) || 15,
+      description: newProd.description,
+      isSubscription: newProd.isSubscription,
+      recurring: newProd.recurring,
+      quantityOnHand: newProd.quantityOnHand,
+      status: newProd.status,
+      variants: newProd.variants,
+      price: newProd.price
+    }).catch((err) => {
+      console.warn('MongoDB Product.create warning:', err.message);
+      return null;
+    });
 
-    res.status(201).json({ success: true, message: 'Product created successfully', data: newProd });
+    const responseData = mongoDoc ? mongoDoc.toObject() : newProd;
+    if (responseData._id) responseData.id = responseData._id.toString();
+
+    res.status(201).json({ success: true, message: 'Product created successfully', data: responseData });
   } catch (error) {
+    console.error('Create product error:', error);
     res.status(500).json({ success: false, message: 'Failed to create product' });
   }
 };
@@ -175,15 +240,69 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const index = productsStore.findIndex((p) => p.id === id || p._id === id);
+    const updateData = req.body;
+    const targetId = id.toString();
 
-    if (index !== -1) {
-      productsStore[index] = { ...productsStore[index], ...req.body };
-      return res.json({ success: true, message: 'Product updated successfully', data: productsStore[index] });
+    if (updateData.price && !updateData.listPrice) {
+      const num = Number(String(updateData.price).replace(/[^0-9.]/g, ''));
+      if (!isNaN(num) && num > 0) updateData.listPrice = num;
+    }
+    if (updateData.quantityOnHand !== undefined) {
+      updateData.quantityOnHand = Number(updateData.quantityOnHand);
     }
 
-    res.json({ success: true, message: 'Product updated', data: req.body });
+    // 1. Update in-memory fallback store
+    const index = productsStore.findIndex((p) =>
+      (p.id && p.id.toString() === targetId) ||
+      (p._id && p._id.toString() === targetId) ||
+      (p.name && updateData.name && p.name.toLowerCase() === updateData.name.toLowerCase())
+    );
+
+    if (index !== -1) {
+      productsStore[index] = { ...productsStore[index], ...updateData };
+    }
+
+    // 2. Update MongoDB Document if connected
+    let updatedDoc = null;
+    if (targetId.match(/^[0-9a-fA-F]{24}$/)) {
+      updatedDoc = await Product.findByIdAndUpdate(targetId, updateData, { new: true }).catch(() => null);
+    } else {
+      updatedDoc = await Product.findOneAndUpdate(
+        { $or: [{ sku: targetId }, { name: updateData.name || '' }] },
+        updateData,
+        { new: true }
+      ).catch(() => null);
+    }
+
+    const finalProduct = updatedDoc ? updatedDoc.toObject() : (index !== -1 ? productsStore[index] : { ...updateData, _id: targetId, id: targetId });
+    if (finalProduct._id) finalProduct.id = finalProduct._id.toString();
+
+    // 3. Sync update to warehouse stock inventory
+    try {
+      const { addRecentActivity } = require('./dashboardController');
+      const prodName = updateData.name || finalProduct.name;
+      const stockItem = stockInventory.find(s => s.product.toLowerCase() === prodName.toLowerCase() || s.id === targetId);
+      if (stockItem) {
+        if (updateData.name) stockItem.product = updateData.name;
+        if (updateData.quantityOnHand !== undefined) {
+          stockItem.inStock = Number(updateData.quantityOnHand);
+          stockItem.available = Math.max(0, stockItem.inStock - stockItem.reserved);
+          addRecentActivity(`Warehouse stock updated for ${prodName} (Qty: ${stockItem.inStock})`, 'INVENTORY', '#262B33');
+        }
+      } else if (updateData.name || updateData.listPrice) {
+        addRecentActivity(`Product Details updated for ${prodName}`, 'GENERAL', '#2F6F5E');
+      }
+    } catch (e) {
+      // Ignore
+    }
+
+    res.json({
+      success: true,
+      message: `Product "${finalProduct.name || 'item'}" updated successfully!`,
+      data: finalProduct
+    });
   } catch (error) {
+    console.error('Update product error:', error);
     res.status(500).json({ success: false, message: 'Failed to update product' });
   }
 };
@@ -194,10 +313,36 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    productsStore = productsStore.filter((p) => p.id !== id && p._id !== id);
-    await Product.findByIdAndDelete(id).catch(() => null);
+    const targetId = id.toString();
+
+    let deletedName = '';
+    const targetProd = productsStore.find((p) => (p.id && p.id.toString() === targetId) || (p._id && p._id.toString() === targetId));
+    if (targetProd) deletedName = targetProd.name;
+
+    productsStore = productsStore.filter((p) => (p.id && p.id.toString() !== targetId) && (p._id && p._id.toString() !== targetId));
+
+    if (targetId.match(/^[0-9a-fA-F]{24}$/)) {
+      await Product.findByIdAndDelete(targetId).catch(() => null);
+    } else if (deletedName) {
+      await Product.findOneAndDelete({ name: deletedName }).catch(() => null);
+    }
+
+    // Sync with warehouse stock
+    try {
+      const { stockInventory } = require('./fulfillmentController');
+      if (deletedName) {
+        const stockIdx = stockInventory.findIndex(s => s.product.toLowerCase() === deletedName.toLowerCase());
+        if (stockIdx !== -1) {
+          stockInventory.splice(stockIdx, 1);
+        }
+      }
+    } catch (e) {
+      // Ignore
+    }
+
     res.json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {
+    console.error('Delete product error:', error);
     res.status(500).json({ success: false, message: 'Failed to delete product' });
   }
 };

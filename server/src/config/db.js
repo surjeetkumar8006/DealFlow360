@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const env = require('./env');
+const seedAllData = require('../seed/seedData');
 
 const connectDB = async () => {
   try {
@@ -9,6 +10,7 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 8000,
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
+    await seedAllData();
   } catch (error) {
     console.warn(`MongoDB Atlas / URI connection failed: ${error.message}`);
     console.log(`Fallback: Booting in-memory MongoDB server for seamless operation...`);
@@ -18,6 +20,7 @@ const connectDB = async () => {
       const uri = mongod.getUri();
       const conn = await mongoose.connect(uri);
       console.log(`In-Memory MongoDB Connected: ${conn.connection.host}`);
+      await seedAllData();
     } catch (memError) {
       console.error(`Failed to start in-memory MongoDB:`, memError.message);
       process.exit(1);

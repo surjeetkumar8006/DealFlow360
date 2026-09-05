@@ -162,7 +162,7 @@ const Workspace = () => {
           onClick={() => navigate('/quotations')}
           className="btn-primary-gold"
         >
-          + New quotation
+          + New Quotation
         </button>
 
         <button

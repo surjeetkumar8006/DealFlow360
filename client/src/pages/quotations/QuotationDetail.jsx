@@ -7,12 +7,22 @@ import {
   addUpsellToActiveQuotation,
   updateQuotationStatusThunk
 } from '../../store/slices/quotationSlice';
-import { ArrowLeft, Check, AlertTriangle, Plus, ShieldAlert, Save } from 'lucide-react';
+import { ArrowLeft, Check, AlertTriangle, Plus, Save, UserCheck, Tag } from 'lucide-react';
+import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 const UPSELL_ITEMS = [
   { id: 'up-1', title: '+ Wireless Mouse', badge: 'Margin +$18', price: 45, discount: 0, limit: 15 },
   { id: 'up-2', title: '+ Docking Station', badge: 'Promo: 12% off', price: 180, discount: 12, limit: 15 },
   { id: 'up-3', title: '+ Care Plan 2yr', badge: 'Margin +$46', price: 120, discount: 5, limit: 10 },
+];
+
+const PRICE_LIST_OPTIONS = [
+  'Standard Enterprise 2026',
+  'Standard Retail 2026',
+  'Enterprise Partner 2026',
+  'Government & Public 2026',
+  'Custom Price List'
 ];
 
 const QuotationDetail = () => {
@@ -22,12 +32,25 @@ const QuotationDetail = () => {
 
   const { activeQuotation, loading } = useSelector((state) => state.quotation);
 
+  const [customersList, setCustomersList] = useState([]);
   const [customer, setCustomer] = useState('Acme Corp');
   const [priceList, setPriceList] = useState('Standard Enterprise 2026');
 
   useEffect(() => {
     dispatch(fetchQuotationByIdThunk(id || 'q-1042'));
+    fetchCustomers();
   }, [dispatch, id]);
+
+  const fetchCustomers = async () => {
+    try {
+      const res = await api.get('/customers').catch(() => null);
+      if (res?.data?.data) {
+        setCustomersList(res.data.data);
+      }
+    } catch (err) {
+      console.error('Fetch customers error:', err);
+    }
+  };
 
   useEffect(() => {
     if (activeQuotation) {
@@ -60,7 +83,7 @@ const QuotationDetail = () => {
   const handleSaveDraft = () => {
     dispatch(
       updateQuotationStatusThunk({
-        id: activeQuotation?._id || 'q-1042',
+        id: activeQuotation?._id || id || 'q-1042',
         status: 'DRAFT',
         customerName: customer,
         priceList,
@@ -75,7 +98,7 @@ const QuotationDetail = () => {
 
     dispatch(
       updateQuotationStatusThunk({
-        id: activeQuotation?._id || 'q-1042',
+        id: activeQuotation?._id || id || 'q-1042',
         status: nextStatus,
         customerName: customer,
         priceList,
@@ -102,30 +125,51 @@ const QuotationDetail = () => {
         </p>
       </div>
 
-      {/* Customer & Price List Form Inputs matching Wireframe */}
+      {/* Customer & Price List Automatic Select Controls */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-medium text-[var(--text-muted)] mb-1 uppercase tracking-wider">
-            Customer
+          <label className="block text-xs font-medium text-[var(--text-muted)] mb-1 uppercase tracking-wider flex items-center gap-1">
+            <UserCheck className="w-3.5 h-3.5 text-[var(--teal)]" /> Customer (Select from DB)
           </label>
-          <input
-            type="text"
-            value={customer}
-            onChange={(e) => setCustomer(e.target.value)}
+          <select
+            value={customersList.find((c) => c.name.toLowerCase() === customer.toLowerCase())?._id || customer}
+            onChange={(e) => {
+              const val = e.target.value;
+              const foundCust = customersList.find((c) => c._id === val || c.name === val);
+              if (foundCust) {
+                setCustomer(foundCust.name);
+              } else {
+                setCustomer(val);
+              }
+            }}
             className="w-full px-3 py-2 text-sm bg-white border border-[var(--steel-line)] rounded-lg text-[var(--text)] focus:outline-none focus:border-[var(--gold)] font-medium shadow-xs"
-          />
+          >
+            {customersList.map((c) => (
+              <option key={c._id || c.name} value={c._id || c.name}>
+                {c.name} ({c.tier || 'Gold'} Tier)
+              </option>
+            ))}
+            {!customersList.some((c) => c.name.toLowerCase() === customer.toLowerCase()) && (
+              <option value={customer}>{customer}</option>
+            )}
+          </select>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-[var(--text-muted)] mb-1 uppercase tracking-wider">
-            Price List
+          <label className="block text-xs font-medium text-[var(--text-muted)] mb-1 uppercase tracking-wider flex items-center gap-1">
+            <Tag className="w-3.5 h-3.5 text-[var(--teal)]" /> Price List (Select Option)
           </label>
-          <input
-            type="text"
+          <select
             value={priceList}
             onChange={(e) => setPriceList(e.target.value)}
             className="w-full px-3 py-2 text-sm bg-white border border-[var(--steel-line)] rounded-lg text-[var(--text)] focus:outline-none focus:border-[var(--gold)] font-medium shadow-xs"
-          />
+          >
+            {PRICE_LIST_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -196,6 +240,40 @@ const QuotationDetail = () => {
         </div>
       </div>
 
+      {/* 🤖 AI Deal Copilot & Win Predictor Widget */}
+      <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 border border-blue-200/80 rounded-xl space-y-3 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-blue-600 text-white rounded-lg font-bold text-xs">
+              AI Copilot
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Predicted Deal Win Rate: <strong>88% (High Closure Probability)</strong></span>
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+                Recommended Action: Cap Service lines at ceiling (10%) to bypass Finance approval delay and accelerate deal signoff.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              lineItems.forEach((l) => {
+                if (l.discount > l.limit) {
+                  handleDiscountChange(l.id, l.limit);
+                }
+              });
+              toast.success('AI Margin Optimizer: All line discounts capped to allowed ceiling!');
+            }}
+            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+          >
+            ⚡ Auto-Optimize Margin & Auto-Pass Approval
+          </button>
+        </div>
+      </div>
+
       {/* Upsell and Cross-Sell Suggestions Section matching Wireframe */}
       <div className="space-y-3 pt-2">
         <h2 className="text-base font-semibold text-[var(--teal)] flex items-center gap-2">
@@ -207,7 +285,7 @@ const QuotationDetail = () => {
             <div
               key={upsell.id}
               onClick={() => handleAddUpsell(upsell)}
-              className="p-4 bg-[#FAF9F5] border border-[var(--steel-line)] rounded-xl cursor-pointer hover:shadow-md hover:border-[var(--gold)] transition-all space-y-2 group"
+              className="p-4 bg-white border border-slate-200 rounded-xl cursor-pointer hover:shadow-md hover:border-[var(--gold)] transition-all space-y-2 group"
             >
               <div className="font-semibold text-sm text-[var(--text)] group-hover:text-[var(--gold)] flex items-center justify-between">
                 <span>{upsell.title}</span>

@@ -13,6 +13,8 @@ const fulfillmentRoutes = require('./routes/fulfillmentRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const productRoutes = require('./routes/productRoutes');
+const customerRoutes = require('./routes/customerRoutes');
+const governanceRoutes = require('./routes/governanceRoutes');
 
 const app = express();
 
@@ -38,6 +40,8 @@ app.use('/api/fulfillment', fulfillmentRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/governance', governanceRoutes);
 
 // 404 Route Not Found Handler
 app.use(notFound);

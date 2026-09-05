@@ -1,4 +1,4 @@
-const { quotationsStore } = require('./quotationController');
+const Quotation = require('../models/Quotation');
 
 let approvalsStore = [
   {
@@ -32,22 +32,22 @@ let approvalsStore = [
     ]
   },
   {
-    _id: 'q-1039',
-    quoteNumber: 'Q-1039',
+    _id: 'q-1003',
+    quoteNumber: 'Q-1003',
     customerName: 'Beta Industries',
     customerTier: 'Gold',
     salesRep: 'Rahul Sharma',
     totalAmount: 28900,
     discountPercentage: 18,
-    riskScore: 12.4,
-    riskLevel: 'MEDIUM',
+    riskScore: 18.5,
+    riskLevel: 'HIGH',
     stage: 'Finance',
     assignedTo: 'R. Iyer',
-    status: 'REVISION_REQUESTED',
-    ceilingViolation: 'Setup Service discount 18% returned by Finance for margin justification.',
+    status: 'PENDING_APPROVAL',
+    ceilingViolation: 'Setup Service discount given is 18% (Allowed Gold tier ceiling is 15%). Exceeds threshold by 3 points.',
     flaggedLines: [
       { line: 'Enterprise Server Node', discountGiven: '15%', limitAllowed: '15%', overBy: '0 pt - OK', status: 'OK' },
-      { line: 'Dedicated Migration Service', discountGiven: '18%', limitAllowed: '10%', overBy: '8 pt OVER', status: 'OVER' }
+      { line: 'Onsite Setup Service', discountGiven: '18%', limitAllowed: '15%', overBy: '3 pt OVER', status: 'OVER' }
     ],
     stepper: [
       { step: 1, label: 'Submitted', status: 'COMPLETED', color: '#2F6F5E' },
@@ -56,36 +56,7 @@ let approvalsStore = [
       { step: 4, label: 'Confirmed', status: 'PENDING', color: '#94A3B8' }
     ],
     auditTrail: [
-      { user: 'Rahul Sharma', action: 'Submitted', date: 'Aug 18', note: 'Submitted quote Q-1039' },
-      { user: 'R. Iyer', action: 'Returned', date: 'Aug 19', note: 'Requesting margin breakdown' }
-    ]
-  },
-  {
-    _id: 'q-1035',
-    quoteNumber: 'Q-1035',
-    customerName: 'Nova Retail',
-    customerTier: 'Gold',
-    salesRep: 'Priya Verma',
-    totalAmount: 9750,
-    discountPercentage: 10,
-    riskScore: 5.5,
-    riskLevel: 'LOW',
-    stage: 'Auto-Approved',
-    assignedTo: '-',
-    status: 'APPROVED',
-    ceilingViolation: null,
-    flaggedLines: [
-      { line: 'POS Hardware Terminal', discountGiven: '10%', limitAllowed: '15%', overBy: '0 pt - OK', status: 'OK' }
-    ],
-    stepper: [
-      { step: 1, label: 'Submitted', status: 'COMPLETED', color: '#2F6F5E' },
-      { step: 2, label: 'Sales Manager', status: 'COMPLETED', color: '#2F6F5E' },
-      { step: 3, label: 'Finance', status: 'COMPLETED', color: '#2F6F5E' },
-      { step: 4, label: 'Confirmed', status: 'COMPLETED', color: '#2F6F5E' }
-    ],
-    auditTrail: [
-      { user: 'Priya Verma', action: 'Submitted', date: 'Aug 15', note: 'Submitted quote Q-1035' },
-      { user: 'System Governance', action: 'Auto-Approved', date: 'Aug 15', note: 'All discounts within Gold tier limits' }
+      { user: 'Rahul Sharma', action: 'Submitted', date: 'Aug 18', note: 'Submitted quote Q-1003' }
     ]
   }
 ];
@@ -133,81 +104,154 @@ const getApprovalById = async (req, res) => {
 
 // @desc Process an approval request (Approve, Reject, Return for Revision)
 // @route POST /api/approvals/:id/action
-// @access Private (Manager/Admin)
+// @access Private (Manager/Finance/Admin)
 const processApproval = async (req, res) => {
   try {
     const { id } = req.params;
-    const { action, note } = req.body; // action: 'APPROVE' | 'REJECT' | 'REVISION'
+    const { action, note } = req.body;
+    const userRole = (req.user?.role || 'admin').toLowerCase();
+    const userName = req.user?.name || (userRole === 'finance' ? 'R. Iyer (Finance)' : 'M. Shah (Manager)');
 
-    const itemIndex = approvalsStore.findIndex((a) => a._id.toLowerCase() === id.toLowerCase() || a.quoteNumber.toLowerCase() === id.toLowerCase());
-    if (itemIndex === -1) {
-      return res.status(404).json({ success: false, message: 'Approval item not found' });
+    // 1. Strict RBAC Enforcement: Sales Reps cannot perform approval actions
+    if (userRole === 'sales_rep' || userRole === 'customer') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied: Sales Reps and Customers are not authorized to perform approval actions.'
+      });
+    }
+
+    const itemIndex = approvalsStore.findIndex(
+      (a) => a._id.toLowerCase() === id.toLowerCase() || a.quoteNumber.toLowerCase() === id.toLowerCase()
+    );
+
+    const item = itemIndex !== -1 ? approvalsStore[itemIndex] : null;
+    const currentStage = item ? item.stage : 'Sales Manager';
+    const isHighRisk = item ? (item.riskLevel === 'HIGH' || item.riskScore >= 15) : true;
+
+    // 2. Stage-based Access Checks
+    if (currentStage === 'Sales Manager' && !['sales_manager', 'admin'].includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied: This quotation is pending Sales Manager approval. Only Sales Managers or Admins can act at this stage.'
+      });
+    }
+
+    if (currentStage === 'Finance' && !['finance', 'admin'].includes(userRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access Denied: This quotation has passed Manager review and is pending Finance approval. Only Finance or Admins can act at this stage.'
+      });
     }
 
     let newStatus = 'APPROVED';
     let newStage = 'Confirmed';
-    let stepperConfig = [
-      { step: 1, label: 'Submitted', status: 'COMPLETED', color: '#2F6F5E' },
-      { step: 2, label: 'Sales Manager', status: 'COMPLETED', color: '#2F6F5E' },
-      { step: 3, label: 'Finance', status: 'COMPLETED', color: '#2F6F5E' },
-      { step: 4, label: 'Confirmed', status: 'COMPLETED', color: '#2F6F5E' }
-    ];
+    let stepperConfig = [];
+    let auditAction = 'Approved';
+    let defaultNote = '';
+
+    const currentDateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
     if (action === 'REJECT') {
       newStatus = 'REJECTED';
       newStage = 'Rejected';
+      auditAction = 'Rejected';
+      defaultNote = `${userRole === 'finance' ? 'Finance' : 'Manager'} rejected quote exception`;
       stepperConfig = [
         { step: 1, label: 'Submitted', status: 'COMPLETED', color: '#2F6F5E' },
-        { step: 2, label: 'Sales Manager', status: 'REJECTED', color: '#9E2A2B' },
-        { step: 3, label: 'Finance', status: 'PENDING', color: '#94A3B8' },
+        { step: 2, label: 'Sales Manager', status: currentStage === 'Finance' ? 'COMPLETED' : 'REJECTED', color: '#9E2A2B' },
+        { step: 3, label: 'Finance', status: currentStage === 'Finance' ? 'REJECTED' : 'PENDING', color: '#94A3B8' },
         { step: 4, label: 'Confirmed', status: 'PENDING', color: '#94A3B8' }
       ];
     } else if (action === 'REVISION') {
       newStatus = 'REVISION_REQUESTED';
       newStage = 'Revision Requested';
+      auditAction = 'Returned';
+      defaultNote = `${userRole === 'finance' ? 'Finance' : 'Manager'} requested revision & discount justification`;
       stepperConfig = [
         { step: 1, label: 'Submitted', status: 'COMPLETED', color: '#2F6F5E' },
-        { step: 2, label: 'Sales Manager', status: 'REVISION_REQUESTED', color: '#B8863B' },
-        { step: 3, label: 'Finance', status: 'PENDING', color: '#94A3B8' },
+        { step: 2, label: 'Sales Manager', status: currentStage === 'Finance' ? 'COMPLETED' : 'REVISION_REQUESTED', color: '#B8863B' },
+        { step: 3, label: 'Finance', status: currentStage === 'Finance' ? 'REVISION_REQUESTED' : 'PENDING', color: '#94A3B8' },
         { step: 4, label: 'Confirmed', status: 'PENDING', color: '#94A3B8' }
       ];
+    } else {
+      // APPROVE ACTION
+      if (currentStage === 'Sales Manager' && isHighRisk) {
+        // Multi-tier chain: Manager approval sends High-Risk quote to Finance step!
+        newStatus = 'PENDING_FINANCE';
+        newStage = 'Finance';
+        auditAction = 'Manager Approved';
+        defaultNote = 'Sales Manager approved quote. Routed to Finance for 2nd-level approval.';
+        stepperConfig = [
+          { step: 1, label: 'Submitted', status: 'COMPLETED', color: '#2F6F5E' },
+          { step: 2, label: 'Sales Manager', status: 'COMPLETED', color: '#2F6F5E' },
+          { step: 3, label: 'Finance', status: 'ACTIVE', color: '#3B82F6' },
+          { step: 4, label: 'Confirmed', status: 'PENDING', color: '#94A3B8' }
+        ];
+      } else {
+        // Finance approval (Stage 3) OR Medium-Risk quote manager approval -> Fully CONFIRMED & APPROVED!
+        newStatus = 'APPROVED';
+        newStage = 'Confirmed';
+        auditAction = currentStage === 'Finance' ? 'Finance Approved' : 'Approved';
+        defaultNote = currentStage === 'Finance'
+          ? 'Finance second-level approval completed. Quotation confirmed.'
+          : 'Sales Manager approved quote. Quotation confirmed.';
+        stepperConfig = [
+          { step: 1, label: 'Submitted', status: 'COMPLETED', color: '#2F6F5E' },
+          { step: 2, label: 'Sales Manager', status: 'COMPLETED', color: '#2F6F5E' },
+          { step: 3, label: 'Finance', status: 'COMPLETED', color: '#2F6F5E' },
+          { step: 4, label: 'Confirmed', status: 'COMPLETED', color: '#2F6F5E' }
+        ];
+      }
     }
 
-    approvalsStore[itemIndex].status = newStatus;
-    approvalsStore[itemIndex].stage = newStage;
-    approvalsStore[itemIndex].stepper = stepperConfig;
-    approvalsStore[itemIndex].managerNote = note || `Manager action: ${action}`;
+    if (itemIndex !== -1) {
+      approvalsStore[itemIndex].status = newStatus;
+      approvalsStore[itemIndex].stage = newStage;
+      approvalsStore[itemIndex].stepper = stepperConfig;
+      approvalsStore[itemIndex].managerNote = note || defaultNote;
+      if (newStage === 'Finance') {
+        approvalsStore[itemIndex].assignedTo = 'R. Iyer (Finance)';
+      }
 
-    // Add audit entry if not already added in this exact step
-    if (!approvalsStore[itemIndex].auditTrail) approvalsStore[itemIndex].auditTrail = [];
-    const actionLabel = action === 'REJECT' ? 'Rejected' : action === 'REVISION' ? 'Returned' : 'Approved';
-    
-    approvalsStore[itemIndex].auditTrail.push({
-      user: 'M. Shah',
-      action: actionLabel,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      note: note || `Manager action: ${action}`
-    });
-
-    // Synchronize with quotationsStore
-    const { quotationsStore } = require('./quotationController');
-    const quoteMatch = quotationsStore.find((q) => q._id.toLowerCase() === id.toLowerCase() || q.quoteNumber.toLowerCase() === id.toLowerCase());
-    if (quoteMatch) {
-      quoteMatch.status = newStatus;
-      quoteMatch.managerNote = note || `Manager action: ${action}`;
+      if (!approvalsStore[itemIndex].auditTrail) approvalsStore[itemIndex].auditTrail = [];
+      
+      approvalsStore[itemIndex].auditTrail.push({
+        user: userName,
+        action: auditAction,
+        date: currentDateStr,
+        note: note || defaultNote
+      });
     }
 
-    const { addRecentActivity } = require('./dashboardController');
-    addRecentActivity(
-      `Quote ${approvalsStore[itemIndex].quoteNumber} (${approvalsStore[itemIndex].customerName}) marked as ${newStatus.toLowerCase()} by Manager`,
-      'APPROVAL',
-      newStatus === 'APPROVED' ? '#2F6F5E' : newStatus === 'REVISION_REQUESTED' ? '#B8863B' : '#9E2A2B'
-    );
+    // Synchronize with Quotation collection in DB
+    const targetNumber = approvalsStore[itemIndex]?.quoteNumber || id;
+    const dbQuote = await Quotation.findOne({ quoteNumber: { $regex: new RegExp(`^${targetNumber}$`, 'i') } });
+    if (dbQuote) {
+      dbQuote.status = newStatus;
+      dbQuote.managerNote = note || defaultNote;
+      await dbQuote.save();
+
+      if (newStatus === 'CONFIRMED' || newStatus === 'APPROVED') {
+        const { syncConfirmedQuotationToInvoice } = require('./quotationController');
+        await syncConfirmedQuotationToInvoice(dbQuote);
+      }
+    }
+
+    try {
+      const { addRecentActivity } = require('./dashboardController');
+      addRecentActivity(
+        `Quote ${targetNumber} updated to ${newStage} (${newStatus}) by ${userName}`,
+        'APPROVAL',
+        newStatus === 'APPROVED' ? '#2F6F5E' : newStatus === 'PENDING_FINANCE' ? '#3B82F6' : newStatus === 'REVISION_REQUESTED' ? '#B8863B' : '#9E2A2B'
+      );
+    } catch (e) {
+      // Ignore
+    }
 
     res.json({
       success: true,
-      message: `Quotation ${approvalsStore[itemIndex].quoteNumber} ${newStatus.toLowerCase()} successfully!`,
-      data: approvalsStore[itemIndex]
+      message: `Quotation ${targetNumber} updated to stage '${newStage}' successfully!`,
+      data: itemIndex !== -1 ? approvalsStore[itemIndex] : { quoteNumber: targetNumber, status: newStatus, stage: newStage }
     });
   } catch (error) {
     console.error('Process approval error:', error);

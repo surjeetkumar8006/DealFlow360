@@ -1,133 +1,146 @@
 // Invoice Controller for DealFlow360
-// Manages one-time & recurring invoices, payment reconciliation, and delivery matching
+// Manages DB invoices, payment reconciliation, and delivery matching
+const Invoice = require('../models/Invoice');
 
-let invoicesStore = [
-  {
-    id: 'inv-1042',
-    invoiceNumber: 'INV-1042',
-    customer: 'Acme Corp',
-    amount: '$2,730',
-    numericAmount: 2730,
-    status: 'Unpaid',
-    dueDate: 'Sep 10',
-    createdDate: 'Aug 20, 2026',
-    orderRef: 'Q-1042',
-    deliveryStatus: 'Split Allocated (East Depot + Main Warehouse)',
-    items: [
-      { product: 'Laptop Pro 14', qty: 2, price: '$2,280' },
-      { product: 'Onsite Setup', qty: 1, price: '$450' }
-    ]
-  },
-  {
-    id: 'inv-1043',
-    invoiceNumber: 'INV-1043',
-    customer: 'Acme Corp',
-    amount: '$46',
-    numericAmount: 46,
-    status: 'Paid',
-    dueDate: 'Sep 15',
-    createdDate: 'Aug 15, 2026',
-    orderRef: 'Q-1042 (Recurring)',
-    deliveryStatus: 'Digital Service Active',
-    items: [
-      { product: 'Care Plan 2yr (Monthly Subscription)', qty: 1, price: '$46' }
-    ]
-  },
-  {
-    id: 'inv-1038',
-    invoiceNumber: 'INV-1038',
-    customer: 'Nova Retail',
-    amount: '$9,750',
-    numericAmount: 9750,
-    status: 'Paid',
-    dueDate: 'Aug 30',
-    createdDate: 'Aug 15, 2026',
-    orderRef: 'Q-1004',
-    deliveryStatus: 'Fully Delivered (West Hub)',
-    items: [
-      { product: 'POS Hardware Terminal', qty: 5, price: '$9,750' }
-    ]
-  },
-  {
-    id: 'inv-1035',
-    invoiceNumber: 'INV-1035',
-    customer: 'Beta Industries',
-    amount: '$1,200',
-    numericAmount: 1200,
-    status: 'Unpaid',
-    dueDate: 'Oct 05',
-    createdDate: 'Aug 22, 2026',
-    orderRef: 'Q-1039',
-    deliveryStatus: 'Partial Delivery (East Depot)',
-    items: [
-      { product: 'Support SLA (Quarterly)', qty: 1, price: '$1,200' }
-    ]
-  }
-];
-
-// @desc Get all invoices
+// @desc Get all invoices from DB
 // @route GET /api/invoices
 // @access Private
 const getInvoices = async (req, res) => {
   try {
-    const counts = {
-      unpaid: 4,
-      paid: 21
-    };
+    const invoices = await Invoice.find().sort({ createdAt: -1 });
+
+    const unpaidCount = invoices.filter((i) => i.status === 'Unpaid').length;
+    const paidCount = invoices.filter((i) => i.status === 'Paid').length;
 
     res.json({
       success: true,
-      counts,
-      data: invoicesStore
+      counts: {
+        unpaid: unpaidCount,
+        paid: paidCount
+      },
+      data: invoices.map((inv) => ({
+        _id: inv._id,
+        id: inv._id.toString(),
+        invoiceNumber: inv.invoiceNumber,
+        customer: inv.customer,
+        amount: inv.amount,
+        numericAmount: inv.numericAmount,
+        status: inv.status,
+        dueDate: inv.dueDate,
+        createdDate: inv.createdDate,
+        orderRef: inv.orderRef,
+        deliveryStatus: inv.deliveryStatus,
+        items: inv.items
+      }))
     });
   } catch (error) {
+    console.error('Error fetching invoices:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch invoices' });
   }
 };
 
-// @desc Get single invoice by ID
+// @desc Get single invoice by ID or invoiceNumber from DB
 // @route GET /api/invoices/:id
 // @access Private
 const getInvoiceById = async (req, res) => {
   try {
     const { id } = req.params;
-    const item = invoicesStore.find((inv) => inv.id.toLowerCase() === id.toLowerCase() || inv.invoiceNumber.toLowerCase() === id.toLowerCase());
+    let item;
 
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      item = await Invoice.findById(id);
+    }
     if (!item) {
-      return res.json({ success: true, data: invoicesStore[0] });
+      item = await Invoice.findOne({
+        $or: [
+          { invoiceNumber: { $regex: new RegExp(`^${id}$`, 'i') } },
+          { orderRef: { $regex: new RegExp(`^${id}$`, 'i') } }
+        ]
+      });
     }
 
-    res.json({ success: true, data: item });
+    if (!item) {
+      item = await Invoice.findOne();
+    }
+
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        _id: item._id,
+        id: item._id.toString(),
+        invoiceNumber: item.invoiceNumber,
+        customer: item.customer,
+        amount: item.amount,
+        numericAmount: item.numericAmount,
+        status: item.status,
+        dueDate: item.dueDate,
+        createdDate: item.createdDate,
+        orderRef: item.orderRef,
+        deliveryStatus: item.deliveryStatus,
+        items: item.items
+      }
+    });
   } catch (error) {
+    console.error('Error fetching invoice details:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch invoice details' });
   }
 };
 
-// @desc Record payment for invoice
+// @desc Record payment for invoice in DB
 // @route POST /api/invoices/:id/pay
 // @access Private
 const recordInvoicePayment = async (req, res) => {
   try {
     const { id } = req.params;
-    const idx = invoicesStore.findIndex((inv) => inv.id.toLowerCase() === id.toLowerCase() || inv.invoiceNumber.toLowerCase() === id.toLowerCase());
+    let item;
 
-    if (idx !== -1) {
-      invoicesStore[idx].status = 'Paid';
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      item = await Invoice.findById(id);
+    }
+    if (!item) {
+      item = await Invoice.findOne({ invoiceNumber: { $regex: new RegExp(`^${id}$`, 'i') } });
     }
 
-    const { addRecentActivity } = require('./dashboardController');
-    addRecentActivity(
-      `Payment received for invoice ${invoicesStore[idx]?.invoiceNumber || id} (${invoicesStore[idx]?.customer || ''})`,
-      'INVOICE',
-      '#2F6F5E'
-    );
+    if (item) {
+      item.status = 'Paid';
+      await item.save();
+    }
+
+    try {
+      const { addRecentActivity } = require('./dashboardController');
+      addRecentActivity(
+        `Payment received for invoice ${item?.invoiceNumber || id} (${item?.customer || ''})`,
+        'INVOICE',
+        '#2F6F5E'
+      );
+    } catch (e) {
+      // Ignore
+    }
 
     res.json({
       success: true,
-      message: `Payment recorded for invoice ${invoicesStore[idx]?.invoiceNumber || id}! Status updated to Paid.`,
-      data: invoicesStore[idx] || invoicesStore[0]
+      message: `Payment recorded for invoice ${item?.invoiceNumber || id}! Status updated to Paid.`,
+      data: item ? {
+        _id: item._id,
+        id: item._id.toString(),
+        invoiceNumber: item.invoiceNumber,
+        customer: item.customer,
+        amount: item.amount,
+        numericAmount: item.numericAmount,
+        status: item.status,
+        dueDate: item.dueDate,
+        createdDate: item.createdDate,
+        orderRef: item.orderRef,
+        deliveryStatus: item.deliveryStatus,
+        items: item.items
+      } : null
     });
   } catch (error) {
+    console.error('Error recording payment:', error);
     res.status(500).json({ success: false, message: 'Failed to record payment' });
   }
 };
@@ -135,6 +148,5 @@ const recordInvoicePayment = async (req, res) => {
 module.exports = {
   getInvoices,
   getInvoiceById,
-  recordInvoicePayment,
-  invoicesStore
+  recordInvoicePayment
 };

@@ -48,7 +48,7 @@
   font-weight: 500;
 }
 
-/* Custom CSS Classes matching exact provided template */
+/* Custom CSS Classes */
 @layer components {
   /* Buttons */
   .btn-primary-gold {

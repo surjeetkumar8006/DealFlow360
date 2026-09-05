@@ -1,185 +1,107 @@
 // Quotation Controller for DealFlow360
-// Handles quotation retrieval, creation with multi-tier discount validation, and status updates
+// Handles DB quotation retrieval, creation with multi-tier discount validation, status updates, and deletion
+const Quotation = require('../models/Quotation');
+const Invoice = require('../models/Invoice');
 
-let quotationsStore = [
-  {
-    _id: 'q-1042',
-    quoteNumber: 'Q-1042',
-    customerName: 'Acme Corp',
-    customerTier: 'Silver',
-    salesRep: 'Surjeet Kumar',
-    priceList: 'Standard Enterprise 2026',
-    totalAmount: 2970,
-    discountPercentage: 14,
-    riskScore: 18.5,
-    riskLevel: 'HIGH',
-    status: 'PENDING_APPROVAL',
-    ceilingViolation: 'Onsite Setup Service discount 18% exceeds line limit ceiling of 10% by 8 points.',
-    lineItems: [
-      { id: 'l-1', product: 'Laptop Pro 14', qty: 2, price: 1200, discount: 12, limit: 15 },
-      { id: 'l-2', product: 'Onsite Setup Service', qty: 1, price: 450, discount: 18, limit: 10 },
-      { id: 'l-3', product: 'Extended Warranty', qty: 1, price: 180, discount: 10, limit: 15 }
-    ],
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: 'q-1001',
-    quoteNumber: 'Q-1001',
-    customerName: 'Acme Corp',
-    customerTier: 'Silver',
-    salesRep: 'Surjeet Kumar',
-    priceList: 'Standard Enterprise 2026',
-    totalAmount: 12400,
-    discountPercentage: 8,
-    riskScore: 4.2,
-    riskLevel: 'LOW',
-    status: 'DRAFT',
-    ceilingViolation: null,
-    lineItems: [
-      { id: 'l-10', product: 'Cloud Workstation License (Monthly)', qty: 10, price: 1240, discount: 8, limit: 15 }
-    ],
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: 'q-1002',
-    quoteNumber: 'Q-1002',
-    customerName: 'Delta LLC',
-    customerTier: 'Bronze',
-    salesRep: 'Rahul Sharma',
-    priceList: 'Standard Retail 2026',
-    totalAmount: 3200,
-    discountPercentage: 4,
-    riskScore: 2.1,
-    riskLevel: 'LOW',
-    status: 'DRAFT',
-    ceilingViolation: null,
-    lineItems: [
-      { id: 'l-11', product: 'Standard Support Package', qty: 1, price: 3200, discount: 4, limit: 5 }
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
-  },
-  {
-    _id: 'q-1003',
-    quoteNumber: 'Q-1003',
-    customerName: 'Beta Industries',
-    customerTier: 'Gold',
-    salesRep: 'Rahul Sharma',
-    priceList: 'Enterprise Partner 2026',
-    totalAmount: 28900,
-    discountPercentage: 18,
-    riskScore: 18.5,
-    riskLevel: 'HIGH',
-    status: 'PENDING_APPROVAL',
-    ceilingViolation: 'Setup Service discount given is 18% (Allowed Gold tier ceiling is 15%). Exceeds threshold by 3 points.',
-    lineItems: [
-      { id: 'l-12', product: 'Enterprise Server Node', qty: 1, price: 15000, discount: 15, limit: 15 },
-      { id: 'l-13', product: 'Dedicated Migration Service', qty: 1, price: 13900, discount: 18, limit: 10 }
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
-  },
-  {
-    _id: 'q-1004',
-    quoteNumber: 'Q-1004',
-    customerName: 'Nova Retail',
-    customerTier: 'Gold',
-    salesRep: 'Priya Verma',
-    priceList: 'Standard Retail 2026',
-    totalAmount: 9750,
-    discountPercentage: 10,
-    riskScore: 5.5,
-    riskLevel: 'LOW',
-    status: 'APPROVED',
-    ceilingViolation: null,
-    lineItems: [
-      { id: 'l-14', product: 'POS Hardware Terminal', qty: 5, price: 1950, discount: 10, limit: 15 }
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
-  },
-  {
-    _id: 'q-1005',
-    quoteNumber: 'Q-1005',
-    customerName: 'Zenith Co',
-    customerTier: 'Silver',
-    salesRep: 'Surjeet Kumar',
-    priceList: 'Standard Enterprise 2026',
-    totalAmount: 15300,
-    discountPercentage: 12,
-    riskScore: 11.2,
-    riskLevel: 'MEDIUM',
-    status: 'NEGOTIATION',
-    ceilingViolation: 'Portal negotiation active: Customer requested 12% discount.',
-    lineItems: [
-      { id: 'l-15', product: 'Storage Array Appliance', qty: 2, price: 7650, discount: 12, limit: 10 }
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
-  },
-  {
-    _id: 'q-1006',
-    quoteNumber: 'Q-1006',
-    customerName: 'Orion Ltd',
-    customerTier: 'Gold',
-    salesRep: 'Priya Verma',
-    priceList: 'Enterprise Partner 2026',
-    totalAmount: 41000,
-    discountPercentage: 15,
-    riskScore: 9.8,
-    riskLevel: 'MEDIUM',
-    status: 'CONFIRMED',
-    ceilingViolation: null,
-    lineItems: [
-      { id: 'l-16', product: 'Data Center Infrastructure Bundle', qty: 1, price: 41000, discount: 15, limit: 15 }
-    ],
-    createdAt: new Date(Date.now() - 3600000 * 36).toISOString()
+// Helper function to sync a confirmed quotation to Invoice collection
+const syncConfirmedQuotationToInvoice = async (quote) => {
+  try {
+    if (quote.status !== 'CONFIRMED') return;
+
+    const existingInvoice = await Invoice.findOne({ orderRef: quote.quoteNumber });
+    const formattedAmount = `$${Number(quote.totalAmount || 0).toLocaleString()}`;
+    const invoiceItems = (quote.lineItems || []).map((item) => ({
+      product: item.product,
+      qty: item.qty,
+      price: `$${(item.price * item.qty * (1 - (item.discount || 0) / 100)).toLocaleString()}`
+    }));
+
+    if (existingInvoice) {
+      existingInvoice.amount = formattedAmount;
+      existingInvoice.numericAmount = quote.totalAmount;
+      existingInvoice.customer = quote.customerName;
+      existingInvoice.items = invoiceItems;
+      await existingInvoice.save();
+    } else {
+      const invNum = `INV-${quote.quoteNumber.replace('Q-', '')}`;
+      await Invoice.create({
+        invoiceNumber: invNum,
+        customer: quote.customerName,
+        amount: formattedAmount,
+        numericAmount: quote.totalAmount,
+        status: 'Unpaid',
+        dueDate: 'In 30 Days',
+        orderRef: quote.quoteNumber,
+        deliveryStatus: 'Order Confirmed - Split Allocation Pending',
+        items: invoiceItems
+      });
+    }
+  } catch (err) {
+    console.error(`Failed to sync quote ${quote.quoteNumber} to invoice:`, err);
   }
-];
+};
 
-// @desc Get all quotations
+// @desc Get all quotations from DB
 // @route GET /api/quotations
 // @access Private
 const getQuotations = async (req, res) => {
   try {
+    const quotations = await Quotation.find().sort({ createdAt: -1 });
     res.json({
       success: true,
-      count: quotationsStore.length,
-      data: quotationsStore
+      count: quotations.length,
+      data: quotations
     });
   } catch (error) {
+    console.error('Error fetching quotations:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch quotations' });
   }
 };
 
-// @desc Get single quotation by ID
+// @desc Get single quotation by ID or quoteNumber from DB
 // @route GET /api/quotations/:id
 // @access Private
 const getQuotationById = async (req, res) => {
   try {
     const { id } = req.params;
-    const quotation = quotationsStore.find((q) => q._id === id || q.quoteNumber.toLowerCase() === id.toLowerCase());
+    let quotation;
+
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      quotation = await Quotation.findById(id);
+    }
 
     if (!quotation) {
-      // Fallback to Q-1042 default wireframe quote
-      return res.json({ success: true, data: quotationsStore[0] });
+      quotation = await Quotation.findOne({ quoteNumber: { $regex: new RegExp(`^${id}$`, 'i') } });
+    }
+
+    if (!quotation) {
+      quotation = await Quotation.findOne();
+    }
+
+    if (!quotation) {
+      return res.status(404).json({ success: false, message: 'Quotation not found' });
     }
 
     res.json({ success: true, data: quotation });
   } catch (error) {
+    console.error('Error fetching quotation detail:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch quotation details' });
   }
 };
 
-// @desc Create a new quotation with automated discount governance evaluation
+// @desc Create a new quotation in DB with automated discount governance evaluation
 // @route POST /api/quotations
 // @access Private
 const createQuotation = async (req, res) => {
   try {
-    const { customerName, customerTier = 'Bronze', priceList = 'Standard 2026', lineItems = [], salesRep = 'Sales Rep' } = req.body;
+    const { customerName, customerTier = 'Gold', priceList = 'Standard Enterprise 2026', lineItems = [], salesRep = 'Surjeet Kumar', status: requestedStatus } = req.body;
 
     if (!customerName || lineItems.length === 0) {
       return res.status(400).json({ success: false, message: 'Customer name and line items are required' });
     }
 
-    const tierLimits = { Bronze: 5, Silver: 10, Gold: 15 };
-    const allowedLimit = tierLimits[customerTier] || 5;
+    const tierLimits = { Bronze: 5, BRONZE: 5, Silver: 10, SILVER: 10, Gold: 15, GOLD: 15, Platinum: 20, PLATINUM: 20 };
+    const allowedLimit = tierLimits[customerTier] || 15;
 
     let totalRaw = 0;
     let totalDiscounted = 0;
@@ -216,11 +138,14 @@ const createQuotation = async (req, res) => {
 
     const riskScore = Number((overallDiscountPercentage * 0.8 + (violationMessage ? 10 : 2)).toFixed(1));
     const riskLevel = riskScore > 15 ? 'HIGH' : riskScore > 8 ? 'MEDIUM' : 'LOW';
-    const status = riskScore > 8 || violationMessage ? 'PENDING_APPROVAL' : 'DRAFT';
+    
+    let status = requestedStatus || (riskScore > 8 || violationMessage ? 'PENDING_APPROVAL' : 'DRAFT');
 
-    const newQuote = {
-      _id: `q-${Date.now()}`,
-      quoteNumber: `Q-${Math.floor(1000 + Math.random() * 9000)}`,
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const quoteNumber = `Q-${randomNum}`;
+
+    const newQuote = await Quotation.create({
+      quoteNumber,
       customerName,
       customerTier,
       priceList,
@@ -231,18 +156,23 @@ const createQuotation = async (req, res) => {
       riskLevel,
       status,
       ceilingViolation: violationMessage,
-      lineItems: processedLineItems,
-      createdAt: new Date().toISOString()
-    };
+      lineItems: processedLineItems
+    });
 
-    quotationsStore.unshift(newQuote);
+    if (newQuote.status === 'CONFIRMED') {
+      await syncConfirmedQuotationToInvoice(newQuote);
+    }
 
-    const { addRecentActivity } = require('./dashboardController');
-    addRecentActivity(
-      `${customerName} quotation (${newQuote.quoteNumber}) created — ${status === 'PENDING_APPROVAL' ? 'Pending Approval' : 'Draft'}`,
-      'QUOTATION',
-      status === 'PENDING_APPROVAL' ? '#B8863B' : '#2F6F5E'
-    );
+    try {
+      const { addRecentActivity } = require('./dashboardController');
+      addRecentActivity(
+        `${customerName} quotation (${newQuote.quoteNumber}) created — ${status}`,
+        'QUOTATION',
+        status === 'CONFIRMED' ? '#262B33' : status === 'PENDING_APPROVAL' ? '#B8863B' : '#2F6F5E'
+      );
+    } catch (e) {
+      // Activity logging optional
+    }
 
     res.status(201).json({
       success: true,
@@ -255,7 +185,7 @@ const createQuotation = async (req, res) => {
   }
 };
 
-// @desc Update quotation status or line items
+// @desc Update quotation status or line items in DB
 // @route PATCH /api/quotations/:id/status
 // @access Private
 const updateQuotationStatus = async (req, res) => {
@@ -263,18 +193,25 @@ const updateQuotationStatus = async (req, res) => {
     const { id } = req.params;
     const { status, note, lineItems, customerName, priceList } = req.body;
 
-    const quoteIndex = quotationsStore.findIndex((q) => q._id === id || q.quoteNumber.toLowerCase() === id.toLowerCase());
-    if (quoteIndex === -1) {
+    let quote;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      quote = await Quotation.findById(id);
+    }
+    if (!quote) {
+      quote = await Quotation.findOne({ quoteNumber: { $regex: new RegExp(`^${id}$`, 'i') } });
+    }
+
+    if (!quote) {
       return res.status(404).json({ success: false, message: 'Quotation not found' });
     }
 
-    if (status) quotationsStore[quoteIndex].status = status;
-    if (note) quotationsStore[quoteIndex].managerNote = note;
-    if (customerName) quotationsStore[quoteIndex].customerName = customerName;
-    if (priceList) quotationsStore[quoteIndex].priceList = priceList;
+    if (status) quote.status = status;
+    if (note) quote.managerNote = note;
+    if (customerName) quote.customerName = customerName;
+    if (priceList) quote.priceList = priceList;
 
     if (lineItems && Array.isArray(lineItems)) {
-      quotationsStore[quoteIndex].lineItems = lineItems;
+      quote.lineItems = lineItems;
       let totalRaw = 0;
       let totalDiscounted = 0;
       lineItems.forEach((item) => {
@@ -284,23 +221,97 @@ const updateQuotationStatus = async (req, res) => {
         totalRaw += p * q;
         totalDiscounted += p * q * (1 - d / 100);
       });
-      quotationsStore[quoteIndex].totalAmount = Math.round(totalDiscounted);
+      quote.totalAmount = Math.round(totalDiscounted);
     }
 
-    const { addRecentActivity } = require('./dashboardController');
-    addRecentActivity(
-      `Quote ${quotationsStore[quoteIndex].quoteNumber} updated (${status || 'Saved'})`,
-      'QUOTATION',
-      '#B8863B'
-    );
+    await quote.save();
+
+    if (quote.status === 'CONFIRMED') {
+      await syncConfirmedQuotationToInvoice(quote);
+    }
+
+    try {
+      const { addRecentActivity } = require('./dashboardController');
+      addRecentActivity(
+        `Quote ${quote.quoteNumber} updated (${status || 'Saved'})`,
+        'QUOTATION',
+        '#B8863B'
+      );
+    } catch (e) {
+      // Ignore
+    }
 
     res.json({
       success: true,
       message: `Quotation updated successfully!`,
-      data: quotationsStore[quoteIndex]
+      data: quote
     });
   } catch (error) {
+    console.error('Update quotation error:', error);
     res.status(500).json({ success: false, message: 'Failed to update quotation' });
+  }
+};
+
+// @desc Delete a quotation from DB
+// @route DELETE /api/quotations/:id
+// @access Private
+const deleteQuotation = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    let quote;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      quote = await Quotation.findById(id);
+    }
+    if (!quote) {
+      quote = await Quotation.findOne({ quoteNumber: { $regex: new RegExp(`^${id}$`, 'i') } });
+    }
+    if (!quote) {
+      quote = await Quotation.findOne({ _id: id });
+    }
+
+    if (!quote) {
+      return res.status(404).json({ success: false, message: 'Quotation not found' });
+    }
+
+    const deletedQuoteNumber = quote.quoteNumber;
+    const deletedIdStr = quote._id.toString();
+
+    // 1. Delete from MongoDB collection
+    await Quotation.deleteOne({ _id: quote._id });
+
+    // 2. Delete corresponding invoice if any
+    await Invoice.deleteOne({ orderRef: deletedQuoteNumber });
+
+    // 3. Sync with approvalController approvalsStore if present
+    try {
+      const { approvalsStore } = require('./approvalController');
+      const appIdx = approvalsStore.findIndex(
+        (a) => String(a._id) === String(deletedIdStr) || String(a._id) === String(id) || a.quoteNumber === deletedQuoteNumber
+      );
+      if (appIdx !== -1) {
+        approvalsStore.splice(appIdx, 1);
+      }
+    } catch (e) {
+      // Ignore
+    }
+
+    // 4. Log activity
+    try {
+      const { addRecentActivity } = require('./dashboardController');
+      addRecentActivity(`Quotation ${deletedQuoteNumber} deleted`, 'QUOTATION', '#9E2A2B');
+    } catch (e) {
+      // Ignore
+    }
+
+    res.json({
+      success: true,
+      message: `Quotation ${deletedQuoteNumber} deleted successfully!`,
+      data: { id: deletedIdStr, quoteNumber: deletedQuoteNumber }
+    });
+  } catch (error) {
+    console.error('Delete quotation error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete quotation' });
   }
 };
 
@@ -309,5 +320,6 @@ module.exports = {
   getQuotationById,
   createQuotation,
   updateQuotationStatus,
-  quotationsStore
+  deleteQuotation,
+  syncConfirmedQuotationToInvoice
 };
