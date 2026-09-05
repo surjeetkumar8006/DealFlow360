@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const env = require('./config/env');
 const connectDB = require('./config/db');
-const errorHandler = require('./middleware/errorHandler');
+const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
@@ -19,11 +19,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'DealFlow360 API Server Operational', timestamp: new Date() });
+  res.json({ success: true, status: 'ok', message: 'DealFlow360 API Server Operational', timestamp: new Date() });
 });
 
 // API Routes
 app.use('/api/auth', authRoutes);
+
+// 404 Route Not Found Handler
+app.use(notFound);
 
 // Global Error Handler Middleware
 app.use(errorHandler);

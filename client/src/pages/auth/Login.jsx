@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { AlertCircle, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Zap } from 'lucide-react';
 
 const Login = () => {
   const [mode, setMode] = useState('login');
@@ -9,22 +9,55 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
+
+  // Touched state to trigger validation feedback only after user interacts
+  const [touched, setTouched] = useState({ email: false, password: false, confirmPassword: false, name: false });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { login, register, switchDemoRole } = useAuth();
   const navigate = useNavigate();
 
+  // Industry-Standard Email Regex Validation
+  const isValidEmail = (emailStr) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
+  };
+
+  const isEmailValid = isValidEmail(email);
+  const isPasswordValid = password.length >= 6;
+  const isConfirmMatch = mode === 'signup' ? password === confirmPassword && confirmPassword.length > 0 : true;
+  const isNameValid = mode === 'signup' ? name.trim().length >= 2 : true;
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Mark all fields as touched on submit attempt
+    setTouched({ email: true, password: true, confirmPassword: true, name: true });
+
+    if (!isEmailValid) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    if (!isPasswordValid) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    if (mode === 'signup' && !isConfirmMatch) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (mode === 'signup') {
-        if (password !== confirmPassword) {
-          throw new Error('Passwords do not match');
-        }
         const userData = await register(name || email.split('@')[0], email, password, 'sales_rep', '');
         redirectByRole(userData.role);
       } else {
@@ -78,7 +111,7 @@ const Login = () => {
   return (
     <div className="min-h-screen w-full lg:h-screen lg:overflow-hidden flex flex-col lg:flex-row bg-[var(--paper-dim)] text-[var(--text)]">
       
-      {/* Mobile/Tablet Compact Dark Header (Visible only on < 1024px screens) */}
+      {/* Mobile/Tablet Compact Dark Header */}
       <div className="lg:hidden bg-[var(--ink)] text-[var(--text-inverse)] px-5 py-4 border-b border-white/10 flex items-center justify-between shadow-md shrink-0">
         <div>
           <span className="brand-mark text-xl font-bold text-white">DealFlow360</span>
@@ -90,10 +123,8 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Desktop Left Brand Rail (Visible on >= 1024px screens) */}
+      {/* Desktop Left Brand Rail */}
       <div className="hidden lg:flex flex-1 lg:max-w-[40%] bg-[var(--ink)] text-[var(--text-inverse)] p-8 lg:p-10 flex-col justify-between relative overflow-hidden h-full shrink-0">
-        
-        {/* Subtle Radial Glow */}
         <div className="absolute inset-0 bg-[radial-gradient(600px_300px_at_85%_90%,rgba(184,134,59,0.14),transparent_70%)] pointer-events-none"></div>
 
         <div className="relative z-10">
@@ -162,7 +193,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Form Side (Ultra-Responsive: Perfectly Centered on Desktop, Fluid Scrollable on Mobile) */}
+      {/* Form Side */}
       <div className="flex-1 bg-[var(--paper)] p-4 sm:p-6 lg:p-8 flex items-center justify-center lg:h-full overflow-y-auto">
         <div className="w-full max-w-[380px] sm:max-w-[420px] py-2">
           
@@ -174,14 +205,14 @@ const Login = () => {
           <div className="mode-toggle-bar mb-3">
             <button
               type="button"
-              onClick={() => setMode('login')}
+              onClick={() => { setMode('login'); setError(''); setTouched({}); }}
               className={`mode-toggle-btn ${mode === 'login' ? 'active' : ''}`}
             >
               Log in
             </button>
             <button
               type="button"
-              onClick={() => setMode('signup')}
+              onClick={() => { setMode('signup'); setError(''); setTouched({}); }}
               className={`mode-toggle-btn ${mode === 'signup' ? 'active' : ''}`}
             >
               Sign up
@@ -192,65 +223,142 @@ const Login = () => {
             {mode === 'login' ? 'Welcome back' : 'Create your account'}
           </h1>
 
-          {/* Error Message */}
+          {/* Form Level Error Message */}
           {error && (
-            <div className="mb-3 bg-[var(--rust-tint)] border border-[var(--rust)] text-[var(--rust)] p-2.5 rounded-md text-xs font-medium flex items-center gap-2">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <div className="mb-3 bg-[var(--rust-tint)] border border-[var(--rust)] text-[var(--rust)] p-2.5 rounded-md text-xs font-medium flex items-center gap-2 animate-shake">
+              <AlertCircle className="w-4 h-4 shrink-0 text-[var(--rust)]" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-2.5">
+          {/* Form with noValidate to suppress ugly native browser popups */}
+          <form onSubmit={handleSubmit} noValidate className="space-y-3">
+            
+            {/* Name Field (on Signup) */}
             {mode === 'signup' && (
               <div>
-                <label className="field-label mb-1 text-xs">Full name</label>
+                <label className="field-label mb-1 text-xs flex justify-between items-center">
+                  <span>Full name</span>
+                  {touched.name && isNameValid && (
+                    <span className="text-[11px] text-[var(--teal)] font-medium flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-[var(--teal)]" /> Looks good!
+                    </span>
+                  )}
+                </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onBlur={() => handleBlur('name')}
                   placeholder="Rahul Sharma"
-                  required={mode === 'signup'}
-                  className="field-input py-2 text-xs"
+                  className={`field-input py-2 text-xs transition-colors ${
+                    touched.name
+                      ? isNameValid
+                        ? 'border-[var(--teal)] focus:border-[var(--teal)] focus:ring-[var(--teal-tint)]'
+                        : 'border-[var(--rust)] focus:border-[var(--rust)] focus:ring-[var(--rust-tint)] bg-rose-50/40'
+                      : ''
+                  }`}
                 />
+                {touched.name && !isNameValid && (
+                  <p className="mt-1 text-[11px] text-[var(--rust)] font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 shrink-0" /> Please enter your name (min 2 characters).
+                  </p>
+                )}
               </div>
             )}
 
+            {/* Email Field with Real-Time Industry Validation */}
             <div>
-              <label className="field-label mb-1 text-xs">Email</label>
+              <label className="field-label mb-1 text-xs flex justify-between items-center">
+                <span>Email address</span>
+                {touched.email && isEmailValid && (
+                  <span className="text-[11px] text-[var(--teal)] font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-[var(--teal)]" /> Looks good!
+                  </span>
+                )}
+              </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => handleBlur('email')}
                 placeholder="you@company.com"
-                required
-                className="field-input py-2 text-xs"
+                className={`field-input py-2 text-xs transition-colors ${
+                  touched.email
+                    ? isEmailValid
+                      ? 'border-[var(--teal)] focus:border-[var(--teal)] focus:ring-[var(--teal-tint)]'
+                      : 'border-[var(--rust)] focus:border-[var(--rust)] focus:ring-[var(--rust-tint)] bg-rose-50/40'
+                    : ''
+                }`}
               />
+              {touched.email && !isEmailValid && (
+                <p className="mt-1 text-[11px] text-[var(--rust)] font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" /> Please enter a valid email address (e.g. name@company.com).
+                </p>
+              )}
             </div>
 
+            {/* Password Field with Real-Time Validation */}
             <div>
-              <label className="field-label mb-1 text-xs">Password</label>
+              <label className="field-label mb-1 text-xs flex justify-between items-center">
+                <span>Password</span>
+                {touched.password && isPasswordValid && (
+                  <span className="text-[11px] text-[var(--teal)] font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-[var(--teal)]" /> Password strong & valid
+                  </span>
+                )}
+              </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => handleBlur('password')}
                 placeholder="••••••••"
-                required
-                className="field-input py-2 text-xs"
+                className={`field-input py-2 text-xs transition-colors ${
+                  touched.password
+                    ? isPasswordValid
+                      ? 'border-[var(--teal)] focus:border-[var(--teal)] focus:ring-[var(--teal-tint)]'
+                      : 'border-[var(--rust)] focus:border-[var(--rust)] focus:ring-[var(--rust-tint)] bg-rose-50/40'
+                    : ''
+                }`}
               />
+              {touched.password && !isPasswordValid && (
+                <p className="mt-1 text-[11px] text-[var(--rust)] font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" /> Password must be at least 6 characters.
+                </p>
+              )}
             </div>
 
+            {/* Confirm Password Field (on Signup) */}
             {mode === 'signup' && (
               <div>
-                <label className="field-label mb-1 text-xs">Confirm password</label>
+                <label className="field-label mb-1 text-xs flex justify-between items-center">
+                  <span>Confirm password</span>
+                  {touched.confirmPassword && isConfirmMatch && confirmPassword.length > 0 && (
+                    <span className="text-[11px] text-[var(--teal)] font-medium flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-[var(--teal)]" /> Passwords match!
+                    </span>
+                  )}
+                </label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  onBlur={() => handleBlur('confirmPassword')}
                   placeholder="••••••••"
-                  required={mode === 'signup'}
-                  className="field-input py-2 text-xs"
+                  className={`field-input py-2 text-xs transition-colors ${
+                    touched.confirmPassword && confirmPassword.length > 0
+                      ? isConfirmMatch
+                        ? 'border-[var(--teal)] focus:border-[var(--teal)] focus:ring-[var(--teal-tint)]'
+                        : 'border-[var(--rust)] focus:border-[var(--rust)] focus:ring-[var(--rust-tint)] bg-rose-50/40'
+                      : ''
+                  }`}
                 />
+                {touched.confirmPassword && !isConfirmMatch && confirmPassword.length > 0 && (
+                  <p className="mt-1 text-[11px] text-[var(--rust)] font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 shrink-0" /> Passwords do not match.
+                  </p>
+                )}
               </div>
             )}
 
@@ -295,7 +403,7 @@ const Login = () => {
               <span className="text-[9px] bg-[var(--paper-dim)] px-1.5 py-0.5 rounded border border-[var(--steel)]">Pre-Seeded</span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin('sales_rep')}
@@ -335,7 +443,7 @@ const Login = () => {
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin('customer')}
-                className="p-1.5 bg-[var(--card)] hover:bg-[var(--paper-dim)] border border-[var(--steel-line)] rounded text-left transition-all flex flex-col col-span-2 sm:col-span-2"
+                className="p-1.5 bg-[var(--card)] hover:bg-[var(--paper-dim)] border border-[var(--steel-line)] rounded text-left transition-all flex flex-col col-span-2"
               >
                 <span className="text-[11px] font-semibold text-[var(--text)]">Customer Portal</span>
                 <span className="text-[9px] text-[var(--text-muted)] truncate">customer@example.com</span>

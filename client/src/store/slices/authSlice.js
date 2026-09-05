@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 // Async Thunks
 export const loginThunk = createAsyncThunk(
@@ -9,9 +10,10 @@ export const loginThunk = createAsyncThunk(
       const res = await api.post('/auth/login', { email, password });
       const { token, ...userData } = res.data;
       localStorage.setItem('df360_token', token);
+      toast.success(`Welcome back, ${userData.name}! Logged in as ${userData.role.replace('_', ' ').toUpperCase()}`, { id: 'login-success' });
       return { token, user: userData };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Login failed');
+      return rejectWithValue(err.message || 'Login failed');
     }
   }
 );
@@ -23,9 +25,10 @@ export const registerThunk = createAsyncThunk(
       const res = await api.post('/auth/register', { name, email, password, role, companyName });
       const { token, ...userData } = res.data;
       localStorage.setItem('df360_token', token);
+      toast.success(`Account created successfully! Logged in as ${userData.role.replace('_', ' ').toUpperCase()}`, { id: 'register-success' });
       return { token, user: userData };
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Registration failed');
+      return rejectWithValue(err.message || 'Registration failed');
     }
   }
 );
@@ -60,9 +63,13 @@ export const switchRoleDemoThunk = createAsyncThunk(
     if (!creds) return rejectWithValue('Invalid role key');
 
     try {
+      toast.loading(`Authenticating as ${targetRole.replace('_', ' ').toUpperCase()}...`, { id: 'role-switch' });
       await api.post('/auth/seed-demo').catch(() => {});
-      return await dispatch(loginThunk(creds)).unwrap();
+      const result = await dispatch(loginThunk(creds)).unwrap();
+      toast.dismiss('role-switch');
+      return result;
     } catch (err) {
+      toast.dismiss('role-switch');
       return rejectWithValue(err.message || 'Demo role switch failed');
     }
   }
@@ -89,6 +96,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
+      toast.success('Successfully logged out of DealFlow360', { id: 'logout-success' });
     },
     clearAuthError: (state) => {
       state.error = null;
@@ -96,7 +104,6 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Login
       .addCase(loginThunk.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -112,7 +119,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Register
       .addCase(registerThunk.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -128,7 +134,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // Fetch Me
       .addCase(fetchMeThunk.pending, (state) => {
         state.loading = true;
       })
