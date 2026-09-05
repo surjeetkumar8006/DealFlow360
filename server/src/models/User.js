@@ -3,15 +3,22 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true, lowercase: true },
+  email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },
   role: {
     type: String,
-    enum: ['ADMIN', 'SALES_REP', 'SALES_MANAGER', 'FINANCE', 'CUSTOMER'],
-    default: 'SALES_REP'
+    enum: ['admin', 'sales_rep', 'sales_manager', 'finance', 'customer'],
+    default: 'sales_rep'
   },
-  avgHistoricalDiscount: { type: Number, default: 8.0 }, // used for anomaly detection
+  companyName: { type: String, default: '' },
+  tier: {
+    type: String,
+    enum: ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM'],
+    default: 'BRONZE' // For customer role
+  },
+  avgHistoricalDiscount: { type: Number, default: 8.0 }, // For anomaly detection
   avatar: { type: String, default: '' },
+  portalToken: { type: String, default: '' },
   createdAt: { type: Date, default: Date.now }
 });
 

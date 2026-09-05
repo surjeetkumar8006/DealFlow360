@@ -2,50 +2,178 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ink: #14171C;
+  --ink-soft: #262B33;
+  --paper: #F5F4EF;
+  --paper-dim: #ECE9E1;
+  --card: #FBFAF7;
+  --steel: #D9D5C9;
+  --steel-line: #DEDACE;
+  --gold: #B8863B;
+  --gold-deep: #8F6626;
+  --gold-tint: #F1E3C7;
+  --teal: #2F6F5E;
+  --teal-tint: #DCEAE5;
+  --rust: #A5432D;
+  --rust-tint: #F1DED7;
+  --text: #1B1E24;
+  --text-muted: #6B6F76;
+  --text-inverse: #EDEBE3;
+  --text-inverse-dim: #9B9E9C;
+  --radius-s: 4px;
+  --radius-m: 10px;
+  --radius-l: 16px;
+}
+
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 font-sans antialiased min-h-screen selection:bg-blue-500 selection:text-white;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--paper-dim);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
   }
 }
 
-/* Global Component Classes matching wireframe mockup */
+.brand-mark {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.num {
+  font-family: 'Fraunces', serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+/* Custom CSS Classes matching exact provided template */
 @layer components {
-  /* Primary Action Buttons (e.g. Log In, + New Quotation) */
-  .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-150 shadow-sm active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2;
+  /* Buttons */
+  .btn-primary-gold {
+    background-color: var(--gold-deep);
+    color: #ffffff;
+    border: none;
+    padding: 12px 18px;
+    border-radius: var(--radius-s);
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 14.5px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn-primary-gold:hover {
+    background-color: #7a5620;
   }
 
-  /* Secondary / Outline Buttons (e.g. Sign Up, View Approvals, Forgot Password) */
-  .btn-secondary {
-    @apply bg-white hover:bg-slate-50 text-slate-700 font-medium px-4 py-2 border border-slate-300 hover:border-slate-400 rounded-lg transition-all duration-150 shadow-sm active:scale-[0.98] flex items-center justify-center gap-2;
+  .btn-outline-steel {
+    background-color: transparent;
+    color: var(--text);
+    border: 1px solid var(--steel-line);
+    padding: 11px 18px;
+    border-radius: var(--radius-s);
+    font-family: inherit;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .btn-outline-steel:hover {
+    border-color: var(--ink);
   }
 
-  /* Header Nav Tab Active (e.g. Dashboard active pill) */
-  .nav-pill-active {
-    @apply bg-white text-blue-700 font-semibold px-4 py-1.5 rounded-full shadow-sm text-sm transition-all;
+  /* Form Elements */
+  .field-label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
   }
 
-  /* Header Nav Tab Inactive (e.g. Quotations, Approvals, Fulfillment) */
-  .nav-pill-inactive {
-    @apply text-blue-100 hover:text-white hover:bg-white/10 font-medium px-4 py-1.5 rounded-full border border-blue-400/30 text-sm transition-all;
+  .field-input {
+    width: 100%;
+    padding: 11px 13px;
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-s);
+    background-color: #ffffff;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s ease, outline 0.15s ease;
+  }
+  .field-input:focus {
+    outline: 2px solid var(--gold);
+    outline-offset: 1px;
+    border-color: var(--gold);
   }
 
-  /* Card Containers (KPI Cards, Quotation Cards, Summary Boxes) */
-  .card-container {
-    @apply bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all duration-200;
+  /* Helper Note Box */
+  .helper-note-box {
+    border-left: 2px solid var(--teal);
+    background-color: var(--teal-tint);
+    padding: 11px 14px;
+    font-size: 12.5px;
+    color: #254E42;
+    border-radius: 0 var(--radius-s) var(--radius-s) 0;
+    margin-bottom: 22px;
+    line-height: 1.55;
   }
 
-  .card-container-muted {
-    @apply bg-slate-100/80 border border-slate-200 rounded-xl p-5 shadow-sm hover:border-blue-400 hover:shadow-md transition-all duration-200;
+  /* Mode Toggle */
+  .mode-toggle-bar {
+    display: inline-flex;
+    background-color: var(--paper-dim);
+    border-radius: 999px;
+    padding: 3px;
+    margin-bottom: 26px;
+    border: 1px solid var(--steel-line);
+  }
+  .mode-toggle-btn {
+    border: none;
+    background: transparent;
+    padding: 8px 20px;
+    font-size: 13.5px;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .mode-toggle-btn.active {
+    background-color: var(--ink);
+    color: var(--text-inverse);
   }
 
-  /* Banner Note Alert Box (e.g. After login notification banner) */
-  .banner-note {
-    @apply bg-yellow-100/90 border border-yellow-300 text-yellow-900 rounded-xl p-3.5 text-xs sm:text-sm font-medium shadow-sm flex items-center gap-2;
+  /* Panels */
+  .panel-card {
+    background-color: var(--card);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-m);
+    padding: 22px 24px;
   }
 
-  /* Input fields */
-  .input-field {
-    @apply w-full bg-white border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 rounded-lg px-3.5 py-2 text-slate-900 placeholder:text-slate-400 outline-none transition-all;
+  /* Stat Card Left Accent Bars */
+  .stat-card-base {
+    flex: 1 1 220px;
+    background-color: var(--card);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-m);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
   }
+  .stat-card-base::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+  }
+  .stat-card-gold::before { background-color: var(--gold); }
+  .stat-card-ink::before { background-color: var(--ink-soft); }
+  .stat-card-rust::before { background-color: var(--rust); }
 }
