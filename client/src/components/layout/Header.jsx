@@ -50,7 +50,7 @@ const Header = () => {
     { name: 'Invoices', path: '/billing' },
     { name: 'Deal Health', path: '/deal-health' },
     { name: 'Reports', path: '/reports' },
-    { name: 'Product', path: '/backend' },
+    { name: 'Products', path: '/products' },
   ];
 
   return (

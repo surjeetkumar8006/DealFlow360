@@ -74,18 +74,18 @@ export const AreaTrendChart = ({ title = "Quarterly Deal Pipeline Trend ($)", da
                 </div>
               )}
 
-              {/* Bar Container */}
-              <div className="w-full bg-[var(--paper-dim)]/70 rounded-t-xl overflow-hidden flex flex-col justify-end h-full max-h-[140px] relative">
+              {/* Bar Container - Slim & Elegant Bar Width */}
+              <div className="w-7 sm:w-9 max-w-[34px] bg-[var(--paper-dim)]/80 rounded-t-lg overflow-hidden flex flex-col justify-end h-full max-h-[140px] relative border border-[var(--steel-line)]/40 shadow-xs">
                 <div
-                  className={`w-full transition-all duration-500 rounded-t-xl ${
-                    isHovered ? 'brightness-125 shadow-lg scale-y-[1.02]' : 'opacity-90'
+                  className={`w-full transition-all duration-500 rounded-t-lg ${
+                    isHovered ? 'brightness-125 shadow-md scale-y-[1.02]' : 'opacity-90'
                   }`}
                   style={{
                     height: `${heightPercent}%`,
                     backgroundColor: item.color || (metric === 'REVENUE' ? 'var(--teal)' : 'var(--gold)')
                   }}
                 >
-                  <div className="w-full h-1 bg-white/40 rounded-t-xl"></div>
+                  <div className="w-full h-1 bg-white/40 rounded-t-lg"></div>
                 </div>
               </div>
 

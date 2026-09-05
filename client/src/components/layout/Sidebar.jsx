@@ -13,6 +13,7 @@ import {
   Activity,
   BarChart3,
   Settings,
+  Package,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -52,6 +53,7 @@ const Sidebar = () => {
         { name: 'Dashboard', path: '/workspace', icon: LayoutDashboard },
         { name: 'Quotations', path: '/quotations', icon: FileText },
         { name: 'Approvals Queue', path: '/approvals', icon: CheckSquare },
+        { name: 'Products Catalog', path: '/products', icon: Package },
         { name: 'Deal Health', path: '/deal-health', icon: Activity },
         { name: 'Reports & Analytics', path: '/reports', icon: BarChart3 },
       ];
@@ -63,6 +65,7 @@ const Sidebar = () => {
         { name: 'Invoices & Payments', path: '/billing', icon: DollarSign },
         { name: 'Subscriptions', path: '/subscriptions', icon: Repeat },
         { name: 'Fulfillment Splitting', path: '/fulfillment', icon: Truck },
+        { name: 'Products Catalog', path: '/products', icon: Package },
         { name: 'Reports & Analytics', path: '/reports', icon: BarChart3 },
       ];
     }
@@ -75,6 +78,7 @@ const Sidebar = () => {
         { name: 'Fulfillment Splitting', path: '/fulfillment', icon: Truck },
         { name: 'Subscriptions', path: '/subscriptions', icon: Repeat },
         { name: 'Invoices & Payments', path: '/billing', icon: DollarSign },
+        { name: 'Products Catalog', path: '/products', icon: Package },
         { name: 'Deal Health', path: '/deal-health', icon: Activity },
         { name: 'Reports & Analytics', path: '/reports', icon: BarChart3 },
         { name: 'Backend Setup', path: '/backend', icon: Settings },
@@ -89,6 +93,7 @@ const Sidebar = () => {
       { name: 'Fulfillment Splitting', path: '/fulfillment', icon: Truck },
       { name: 'Subscriptions', path: '/subscriptions', icon: Repeat },
       { name: 'Invoices', path: '/invoices', icon: DollarSign },
+      { name: 'Products Catalog', path: '/products', icon: Package },
       { name: 'Deal Health', path: '/deal-health', icon: Activity },
       { name: 'Reports & Analytics', path: '/reports', icon: BarChart3 },
     ];

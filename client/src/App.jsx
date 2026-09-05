@@ -26,6 +26,8 @@ const InvoicesList = lazy(() => import('./pages/invoices/InvoicesList'));
 const InvoiceDetail = lazy(() => import('./pages/invoices/InvoiceDetail'));
 const DealHealth = lazy(() => import('./pages/deal-health/DealHealth'));
 const ReportsAnalytics = lazy(() => import('./pages/reports/ReportsAnalytics'));
+const ProductsCatalog = lazy(() => import('./pages/products/ProductsCatalog'));
+const ProductDetail = lazy(() => import('./pages/products/ProductDetail'));
 const AdminSetup = lazy(() => import('./pages/backend/AdminSetup'));
 const CustomerPortal = lazy(() => import('./pages/customer-portal/CustomerPortal'));
 
@@ -90,7 +92,11 @@ function App() {
                       <Route path="/billing" element={<InvoicesList />} />
                       <Route path="/deal-health" element={<DealHealth />} />
                       <Route path="/reports" element={<ReportsAnalytics />} />
+                      <Route path="/products" element={<ProductsCatalog />} />
+                      <Route path="/products/:id" element={<ProductDetail />} />
                     </Route>
+
+
 
                     {/* Admin Backend Setup */}
                     <Route element={<RoleRoute allowedRoles={['admin']} />}>
