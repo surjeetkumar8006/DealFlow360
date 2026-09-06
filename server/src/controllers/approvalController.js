@@ -61,14 +61,99 @@ let approvalsStore = [
   }
 ];
 
+const syncDBQuotationsToApprovalsStore = async () => {
+  try {
+    const dbQuotes = await Quotation.find();
+    dbQuotes.forEach((dbQuote) => {
+      const qNum = (dbQuote.quoteNumber || '').toLowerCase();
+      const qId = dbQuote._id ? dbQuote._id.toString().toLowerCase() : '';
+
+      const existingIndex = approvalsStore.findIndex(
+        (a) => (a._id || '').toLowerCase() === qId || (a.quoteNumber || '').toLowerCase() === qNum
+      );
+
+      let status = dbQuote.status || 'PENDING_APPROVAL';
+      if (status === 'Pending Approval') status = 'PENDING_APPROVAL';
+
+      let stage = 'Sales Manager';
+      if (status === 'PENDING_FINANCE') stage = 'Finance';
+      else if (status === 'APPROVED' || status === 'CONFIRMED') stage = 'Confirmed';
+      else if (status === 'REVISION_REQUESTED') stage = 'Revision Requested';
+      else if (status === 'REJECTED') stage = 'Rejected';
+
+      let assignedTo = 'M. Shah (Sales Manager)';
+      if (stage === 'Finance') assignedTo = 'R. Iyer (Finance)';
+      else if (stage === 'Confirmed') assignedTo = 'Fiona Finance';
+
+      if (existingIndex !== -1) {
+        approvalsStore[existingIndex].status = status;
+        approvalsStore[existingIndex].stage = stage;
+        approvalsStore[existingIndex].assignedTo = assignedTo;
+        if (dbQuote.totalAmount) approvalsStore[existingIndex].totalAmount = dbQuote.totalAmount;
+      } else {
+        const flaggedLines = (dbQuote.lineItems || []).map((item) => {
+          const discount = item.discount || 0;
+          const limit = item.limit || 15;
+          const isOver = discount > limit;
+          return {
+            line: `${item.product || 'Item'} (${item.category || 'Product'})`,
+            discountGiven: `${discount}%`,
+            limitAllowed: `${limit}%`,
+            overBy: isOver ? `${discount - limit} pt OVER` : '0 pt - OK',
+            status: isOver ? 'OVER' : 'OK'
+          };
+        });
+
+        const stepper = [
+          { step: 1, label: 'Submitted', status: 'COMPLETED', color: '#2F6F5E' },
+          { step: 2, label: 'Sales Manager', status: stage === 'Sales Manager' ? 'ACTIVE' : ['Finance', 'Confirmed'].includes(stage) ? 'COMPLETED' : 'PENDING', color: stage === 'Sales Manager' ? '#3B82F6' : '#2F6F5E' },
+          { step: 3, label: 'Finance', status: stage === 'Finance' ? 'ACTIVE' : stage === 'Confirmed' ? 'COMPLETED' : 'PENDING', color: stage === 'Finance' ? '#3B82F6' : stage === 'Confirmed' ? '#2F6F5E' : '#94A3B8' },
+          { step: 4, label: 'Confirmed', status: stage === 'Confirmed' ? 'COMPLETED' : 'PENDING', color: stage === 'Confirmed' ? '#2F6F5E' : '#94A3B8' }
+        ];
+
+        const dateStr = dbQuote.createdAt
+          ? new Date(dbQuote.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          : 'Sep 6';
+
+        approvalsStore.push({
+          _id: dbQuote._id ? dbQuote._id.toString() : `q-${Date.now()}`,
+          quoteNumber: dbQuote.quoteNumber || `Q-${Math.floor(1000 + Math.random() * 9000)}`,
+          customerName: dbQuote.customerName || 'Customer',
+          customerTier: dbQuote.customerTier || 'Gold',
+          salesRep: dbQuote.salesRep || 'Surjeet Kumar',
+          totalAmount: dbQuote.totalAmount || 0,
+          discountPercentage: dbQuote.discountPercentage || 0,
+          riskScore: dbQuote.riskScore || 12.5,
+          riskLevel: dbQuote.riskLevel || 'HIGH',
+          stage,
+          assignedTo,
+          status,
+          ceilingViolation: dbQuote.ceilingViolation || 'Quotation discount requires Manager & Finance approval governance.',
+          flaggedLines: flaggedLines.length > 0 ? flaggedLines : [
+            { line: 'General Discount', discountGiven: `${dbQuote.discountPercentage || 0}%`, limitAllowed: '15%', overBy: 'Approval Required', status: 'OVER' }
+          ],
+          stepper,
+          auditTrail: [
+            { user: dbQuote.salesRep || 'Surjeet Kumar', action: 'Submitted', date: dateStr, note: 'Submitted for approval' }
+          ]
+        });
+      }
+    });
+  } catch (err) {
+    console.error('Error syncing DB quotations to approvalsStore:', err.message);
+  }
+};
+
 // @desc Get all approval requests
 // @route GET /api/approvals
 // @access Private (Manager/Admin)
 const getPendingApprovals = async (req, res) => {
   try {
-    const pendingCount = approvalsStore.filter((a) => a.status === 'PENDING_APPROVAL').length;
+    await syncDBQuotationsToApprovalsStore();
+
+    const pendingCount = approvalsStore.filter((a) => a.status === 'PENDING_APPROVAL' || a.status === 'PENDING_FINANCE').length;
     const returnedCount = approvalsStore.filter((a) => a.status === 'REVISION_REQUESTED').length;
-    const approvedCount = approvalsStore.filter((a) => a.status === 'APPROVED').length;
+    const approvedCount = approvalsStore.filter((a) => a.status === 'APPROVED' || a.status === 'CONFIRMED').length;
 
     res.json({
       success: true,
@@ -89,6 +174,7 @@ const getPendingApprovals = async (req, res) => {
 // @access Private (Manager/Admin)
 const getApprovalById = async (req, res) => {
   try {
+    await syncDBQuotationsToApprovalsStore();
     const { id } = req.params;
     const item = approvalsStore.find((a) => a._id === id || a.quoteNumber.toLowerCase() === id.toLowerCase());
 
@@ -279,5 +365,6 @@ module.exports = {
   getPendingApprovals,
   getApprovalById,
   processApproval,
+  syncDBQuotationsToApprovalsStore,
   approvalsStore
 };

@@ -49,7 +49,7 @@ const ApprovalsQueue = () => {
   };
 
   const displayedItems = pendingOnlyFilter
-    ? items.filter((item) => item.status === 'PENDING_APPROVAL')
+    ? items.filter((item) => ['PENDING_APPROVAL', 'PENDING_FINANCE'].includes(item.status))
     : items;
 
   return (
@@ -74,7 +74,7 @@ const ApprovalsQueue = () => {
       {/* Summary Status Counter Pills matching Wireframe */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="bg-[#B8863B] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-xs flex items-center gap-2">
-          <span>{counts?.pending ?? items.filter((i) => i.status === 'PENDING_APPROVAL').length}</span>
+          <span>{counts?.pending ?? items.filter((i) => ['PENDING_APPROVAL', 'PENDING_FINANCE'].includes(i.status)).length}</span>
           <span>Pending</span>
         </div>
 

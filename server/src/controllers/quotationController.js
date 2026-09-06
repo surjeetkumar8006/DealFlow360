@@ -177,6 +177,13 @@ const createQuotation = async (req, res) => {
     }
 
     try {
+      const { syncDBQuotationsToApprovalsStore } = require('./approvalController');
+      await syncDBQuotationsToApprovalsStore();
+    } catch (syncErr) {
+      // Sync fallback handled on fetch
+    }
+
+    try {
       const { addRecentActivity } = require('./dashboardController');
       addRecentActivity(
         `${customerName} quotation (${newQuote.quoteNumber}) created — ${status}`,
@@ -241,6 +248,13 @@ const updateQuotationStatus = async (req, res) => {
 
     if (quote.status === 'CONFIRMED') {
       await syncConfirmedQuotationToInvoice(quote);
+    }
+
+    try {
+      const { syncDBQuotationsToApprovalsStore } = require('./approvalController');
+      await syncDBQuotationsToApprovalsStore();
+    } catch (syncErr) {
+      // Handled on fetch
     }
 
     try {

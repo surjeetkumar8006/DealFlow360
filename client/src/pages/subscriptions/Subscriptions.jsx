@@ -4,6 +4,26 @@ import { Plus, ArrowRight, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 
+const DEFAULT_CUSTOMERS = [
+  'Acme Corp',
+  'Beta Industries',
+  'Delta LLC',
+  'Nova Retail',
+  'Zenith Co',
+  'Orion Ltd'
+];
+
+const DEFAULT_PLANS = [
+  'Care Plan 2yr',
+  'Support SLA',
+  'Care Plan 1yr',
+  'Cloud POS Sync',
+  '24/7 Priority Support',
+  'Care Plan 3 years',
+  'Enterprise Cloud Backup Subscription',
+  '24/7 Managed IT Support Retainer'
+];
+
 const Subscriptions = () => {
   const navigate = useNavigate();
 
@@ -26,8 +46,15 @@ const Subscriptions = () => {
 
   const [filter, setFilter] = useState('ALL'); // 'ALL' | 'Active' | 'Paused' | 'Cancelled'
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newCustomer, setNewCustomer] = useState('');
-  const [newPlan, setNewPlan] = useState('');
+  
+  // Selection lists & form state
+  const [customersList, setCustomersList] = useState(DEFAULT_CUSTOMERS);
+  const [plansList, setPlansList] = useState(DEFAULT_PLANS);
+
+  const [selectedCustomer, setSelectedCustomer] = useState('');
+  const [customCustomer, setCustomCustomer] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState('');
+  const [customPlan, setCustomPlan] = useState('');
   const [newCycle, setNewCycle] = useState('Monthly');
 
   useEffect(() => {
@@ -41,7 +68,28 @@ const Subscriptions = () => {
         console.error('Fetch subscriptions error:', err);
       }
     };
+
+    const fetchCustomersAndProducts = async () => {
+      try {
+        const [custRes, prodRes] = await Promise.all([
+          api.get('/customers').catch(() => null),
+          api.get('/products').catch(() => null)
+        ]);
+        if (custRes && custRes.data && Array.isArray(custRes.data.data)) {
+          const names = custRes.data.data.map(c => c.name).filter(Boolean);
+          setCustomersList(prev => Array.from(new Set([...prev, ...names])));
+        }
+        if (prodRes && prodRes.data && Array.isArray(prodRes.data.data)) {
+          const names = prodRes.data.data.map(p => p.name).filter(Boolean);
+          setPlansList(prev => Array.from(new Set([...prev, ...names])));
+        }
+      } catch (err) {
+        console.error('Error fetching options:', err);
+      }
+    };
+
     fetchSubs();
+    fetchCustomersAndProducts();
   }, []);
 
   const filteredSubs = filter === 'ALL'
@@ -54,15 +102,18 @@ const Subscriptions = () => {
 
   const handleCreatePlan = async (e) => {
     e.preventDefault();
-    if (!newCustomer || !newPlan) {
+    const finalCustomer = selectedCustomer === 'CUSTOM' ? customCustomer.trim() : selectedCustomer;
+    const finalPlan = selectedPlan === 'CUSTOM' ? customPlan.trim() : selectedPlan;
+
+    if (!finalCustomer || !finalPlan) {
       toast.error('Customer name and Plan title are required');
       return;
     }
 
     const newSubItem = {
       id: `sub-${Date.now()}`,
-      customer: newCustomer,
-      plan: newPlan,
+      customer: finalCustomer,
+      plan: finalPlan,
       cycle: newCycle,
       nextBill: 'Oct 01',
       status: 'Active'
@@ -71,11 +122,12 @@ const Subscriptions = () => {
     try {
       await api.post('/subscriptions', newSubItem).catch(() => null);
       setSubscriptions([newSubItem, ...subscriptions]);
-      setCounts(prev => ({ ...prev, active: prev.active + 1 }));
-      toast.success(`Created subscription plan ${newPlan} for ${newCustomer}`);
+      toast.success(`Created subscription plan "${finalPlan}" for ${finalCustomer}`);
       setShowAddModal(false);
-      setNewCustomer('');
-      setNewPlan('');
+      setSelectedCustomer('');
+      setCustomCustomer('');
+      setSelectedPlan('');
+      setCustomPlan('');
     } catch (err) {
       toast.error('Failed to create subscription');
     }
@@ -207,26 +259,54 @@ const Subscriptions = () => {
             <form onSubmit={handleCreatePlan} className="space-y-3 text-xs">
               <div>
                 <label className="block font-semibold text-[var(--text)] mb-1">Customer Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Acme Corp"
-                  value={newCustomer}
-                  onChange={(e) => setNewCustomer(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--steel-line)] rounded-lg text-xs"
+                <select
+                  value={selectedCustomer}
+                  onChange={(e) => setSelectedCustomer(e.target.value)}
+                  className="w-full px-3 py-2 border border-[var(--steel-line)] rounded-lg text-xs font-medium bg-white"
                   required
-                />
+                >
+                  <option value="" disabled>-- Select Customer --</option>
+                  {customersList.map((c, idx) => (
+                    <option key={idx} value={c}>{c}</option>
+                  ))}
+                  <option value="CUSTOM">+ Custom Customer Name...</option>
+                </select>
+                {selectedCustomer === 'CUSTOM' && (
+                  <input
+                    type="text"
+                    placeholder="Enter Custom Customer Name (e.g. Acme Corp)"
+                    value={customCustomer}
+                    onChange={(e) => setCustomCustomer(e.target.value)}
+                    className="w-full px-3 py-2 mt-2 border border-[var(--steel-line)] rounded-lg text-xs"
+                    required
+                  />
+                )}
               </div>
 
               <div>
                 <label className="block font-semibold text-[var(--text)] mb-1">Plan Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Care Plan 2yr"
-                  value={newPlan}
-                  onChange={(e) => setNewPlan(e.target.value)}
-                  className="w-full px-3 py-2 border border-[var(--steel-line)] rounded-lg text-xs"
+                <select
+                  value={selectedPlan}
+                  onChange={(e) => setSelectedPlan(e.target.value)}
+                  className="w-full px-3 py-2 border border-[var(--steel-line)] rounded-lg text-xs font-medium bg-white"
                   required
-                />
+                >
+                  <option value="" disabled>-- Select Plan Title --</option>
+                  {plansList.map((p, idx) => (
+                    <option key={idx} value={p}>{p}</option>
+                  ))}
+                  <option value="CUSTOM">+ Custom Plan Title...</option>
+                </select>
+                {selectedPlan === 'CUSTOM' && (
+                  <input
+                    type="text"
+                    placeholder="Enter Custom Plan Title (e.g. Care Plan 2yr)"
+                    value={customPlan}
+                    onChange={(e) => setCustomPlan(e.target.value)}
+                    className="w-full px-3 py-2 mt-2 border border-[var(--steel-line)] rounded-lg text-xs"
+                    required
+                  />
+                )}
               </div>
 
               <div>

@@ -225,7 +225,25 @@ const QuotationsList = () => {
         /* Kanban Board View (5 Columns matching wireframe) */
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-start">
           {KANBAN_STAGES.map((stage) => {
-            const columnQuotes = quotationsList.filter((q) => q.status === stage.id);
+            const columnQuotes = quotationsList.filter((q) => {
+              const statusStr = (q.status || '').toUpperCase();
+              if (stage.id === 'PENDING_APPROVAL') {
+                return ['PENDING_APPROVAL', 'PENDING_FINANCE', 'PENDING APPROVAL'].includes(statusStr);
+              }
+              if (stage.id === 'APPROVED') {
+                return ['APPROVED'].includes(statusStr);
+              }
+              if (stage.id === 'CONFIRMED') {
+                return ['CONFIRMED'].includes(statusStr);
+              }
+              if (stage.id === 'DRAFT') {
+                return ['DRAFT'].includes(statusStr);
+              }
+              if (stage.id === 'NEGOTIATION') {
+                return ['NEGOTIATION', 'REVISION_REQUESTED'].includes(statusStr);
+              }
+              return statusStr === stage.id;
+            });
 
             return (
               <div

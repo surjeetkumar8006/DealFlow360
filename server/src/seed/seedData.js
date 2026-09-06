@@ -44,7 +44,7 @@ const seedQuotationsData = [
     discountPercentage: 18,
     riskScore: 18.5,
     riskLevel: 'HIGH',
-    status: 'DRAFT',
+    status: 'PENDING_APPROVAL',
     ceilingViolation: 'Setup Service discount given is 18% (Allowed Gold tier ceiling is 15%). Exceeds threshold by 3 points.',
     lineItems: [
       { id: 'l-12', product: 'Enterprise Server Node', qty: 1, price: 15000, discount: 15, limit: 15 },
