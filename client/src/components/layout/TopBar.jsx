@@ -45,38 +45,38 @@ const TopBar = () => {
 
   return (
     <>
-      <header className="bg-[#14171C] text-white border-b border-white/10 px-4 sm:px-6 py-2.5 flex items-center justify-between shadow-md sticky top-0 z-30 shrink-0 select-none">
+      <header className="bg-white text-slate-900 border-b border-slate-200 px-4 sm:px-6 py-2.5 flex items-center justify-between shadow-xs sticky top-0 z-30 shrink-0 select-none">
         
         {/* Mobile Hamburger & Logo */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => dispatch(toggleMobileMenu())}
-            className="lg:hidden p-1.5 text-white hover:bg-white/10 rounded-lg transition-colors border border-white/20"
+            className="lg:hidden p-1.5 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors border border-slate-300"
             title="Toggle Navigation Menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          <span className="lg:hidden brand-mark text-lg font-bold text-white tracking-tight">
+          <span className="lg:hidden brand-mark text-lg font-extrabold text-slate-900 tracking-tight">
             DealFlow360
           </span>
 
           {/* Desktop Breadcrumb & Architecture Button */}
           <div className="hidden lg:flex items-center gap-3">
-            <span className="text-xs font-semibold text-[var(--text-inverse-dim)] uppercase tracking-wider">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               DealFlow360 Platform
             </span>
-            <span className="text-white/30">/</span>
-            <span className="text-xs font-bold text-white uppercase tracking-wider bg-white/10 px-2.5 py-0.5 rounded border border-white/20">
+            <span className="text-slate-300">/</span>
+            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider bg-white px-2.5 py-0.5 rounded border border-slate-300">
               {role ? role.replace('_', ' ') : 'Sales Rep'} Workspace
             </span>
 
             <button
               onClick={() => setIsArchModalOpen(true)}
-              className="ml-2 text-xs font-bold text-amber-300 hover:text-white bg-amber-950/80 hover:bg-amber-900 border border-amber-700/80 px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="ml-2 text-xs font-bold text-slate-800 hover:text-slate-950 bg-white hover:bg-slate-50 border border-slate-300 px-2.5 py-1 rounded-md transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
               title="View System Architecture & Data Flow Diagram"
             >
-              <Network className="w-3.5 h-3.5 text-amber-400" />
+              <Network className="w-3.5 h-3.5 text-slate-700" />
               <span>Architecture & Roadmap</span>
             </button>
           </div>
@@ -85,8 +85,8 @@ const TopBar = () => {
         {/* Top Right Controls: Demo Role Quick Switcher & Logout */}
         <div className="flex items-center gap-2.5 sm:gap-3">
           {/* Interactive Demo Persona Switcher */}
-          <div className="flex items-center gap-1 bg-black/60 p-1 rounded-lg border border-white/15 text-xs shadow-inner">
-            <span className="text-[11px] text-[var(--text-inverse-dim)] px-1.5 font-mono hidden md:inline">Persona:</span>
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-300 text-xs shadow-inner">
+            <span className="text-[11px] text-slate-500 px-1.5 font-mono hidden md:inline">Persona:</span>
             {[
               { id: 'sales_rep', label: 'Rep' },
               { id: 'sales_manager', label: 'Manager' },
@@ -99,10 +99,10 @@ const TopBar = () => {
                 <button
                   key={r.id}
                   onClick={() => handleRoleSwitch(r.id)}
-                  className={`text-[11px] px-2 py-0.5 rounded-md font-semibold transition-all ${
+                  className={`text-[11px] px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[var(--gold)] text-white shadow-xs font-bold'
-                      : 'text-[var(--text-inverse-dim)] hover:text-white hover:bg-white/10'
+                      ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
                   title={`Switch active persona to ${r.label}`}
                 >
@@ -112,17 +112,17 @@ const TopBar = () => {
             })}
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-300 bg-emerald-950/80 border border-emerald-800 px-2.5 py-1 rounded-md font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>Engine Active</span>
           </div>
 
           <button
             onClick={handleLogout}
-            className="text-xs font-bold text-rose-200 hover:text-white bg-rose-950/80 hover:bg-rose-900 border border-rose-800/80 hover:border-rose-600 px-2.5 sm:px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+            className="text-xs font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 px-2.5 sm:px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
             title="Log Out"
           >
-            <LogOut className="w-3.5 h-3.5 text-rose-400" />
+            <LogOut className="w-3.5 h-3.5 text-rose-600" />
             <span className="hidden xs:inline">Logout</span>
           </button>
         </div>

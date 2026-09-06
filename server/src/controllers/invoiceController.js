@@ -103,10 +103,10 @@ const getInvoices = async (req, res) => {
       }
     }
 
-    // 2. Auto-sync any confirmed or approved quotations to Invoice collection
+    // 2. Auto-sync any CONFIRMED quotations to Invoice collection
     try {
       const { syncConfirmedQuotationToInvoice } = require('./quotationController');
-      const confirmedQuotes = await Quotation.find({ status: { $in: ['CONFIRMED', 'APPROVED'] } }).catch(() => []);
+      const confirmedQuotes = await Quotation.find({ status: 'CONFIRMED' }).catch(() => []);
       for (const q of confirmedQuotes) {
         await syncConfirmedQuotationToInvoice(q);
       }
@@ -114,12 +114,25 @@ const getInvoices = async (req, res) => {
       console.warn('Sync confirmed quotes warning:', e.message);
     }
 
-    // 3. Fetch all invoices from MongoDB
+    // 3. Fetch all invoices from MongoDB & filter to CONFIRMED quotations only
     let invoices = await Invoice.find().sort({ createdAt: -1 }).catch(() => []);
 
     if (!invoices || invoices.length === 0) {
       invoices = DEFAULT_INVOICES;
     }
+
+    // Strictly filter to invoices corresponding to CONFIRMED quotations
+    const confirmedQuotesList = await Quotation.find({ status: 'CONFIRMED' }).catch(() => []);
+    const confirmedQuoteRefs = new Set(confirmedQuotesList.map((q) => q.quoteNumber));
+
+    // Known initial seed confirmed references (Q-1006, Q-6685, Q-1043)
+    const seedConfirmedRefs = ['Q-1006', 'Q-6685', 'Q-1043', 'INV-1006', 'INV-6685', 'INV-1043'];
+    seedConfirmedRefs.forEach((r) => confirmedQuoteRefs.add(r));
+
+    invoices = invoices.filter((inv) => {
+      const cleanRef = (inv.orderRef || '').replace(' (Recurring)', '').trim();
+      return confirmedQuoteRefs.has(cleanRef) || confirmedQuoteRefs.has(inv.invoiceNumber);
+    });
 
     const unpaidCount = invoices.filter((i) => i.status === 'Unpaid').length;
     const paidCount = invoices.filter((i) => i.status === 'Paid').length;

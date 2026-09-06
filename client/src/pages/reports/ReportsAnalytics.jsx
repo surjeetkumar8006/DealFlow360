@@ -266,42 +266,42 @@ const ReportsAnalytics = () => {
       {/* 3 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Card 1: Quotes Created */}
-        <div className="panel-card space-y-1 border-l-4 border-[var(--teal)]">
-          <div className="text-sm font-semibold text-[var(--text)]">Quotes Created</div>
-          <div className="text-2xl font-bold font-mono text-[var(--text)]">{reportMetrics.kpis.quotesCreated}</div>
-          <div className="text-xs text-[var(--text-muted)] font-medium">{reportMetrics.kpis.quotesCreated} active in DB ({filters.period})</div>
+        <div className="stat-card-base cursor-pointer hover:shadow-md transition-all">
+          <div className="text-xs text-[var(--text-muted)] mb-2 font-medium">Quotes Created</div>
+          <div className="text-3xl font-medium num text-slate-900 mb-1">{reportMetrics.kpis.quotesCreated}</div>
+          <div className="text-xs text-[var(--text-muted)]">{reportMetrics.kpis.quotesCreated} active in DB ({filters.period})</div>
         </div>
 
         {/* Card 2: Avg Approval Time */}
-        <div className="panel-card space-y-1 border-l-4 border-[var(--gold)]">
-          <div className="text-sm font-semibold text-[var(--text)]">Avg Approval Time</div>
-          <div className="text-2xl font-bold font-mono text-[var(--gold)]">{reportMetrics.kpis.avgApprovalTime}</div>
-          <div className="text-xs text-[var(--text-muted)] font-medium">Real-time DB SLA</div>
+        <div className="stat-card-base cursor-pointer hover:shadow-md transition-all">
+          <div className="text-xs text-[var(--text-muted)] mb-2 font-medium">Avg Approval Time</div>
+          <div className="text-3xl font-medium num text-slate-900 mb-1">{reportMetrics.kpis.avgApprovalTime}</div>
+          <div className="text-xs text-[var(--text-muted)]">Real-time DB SLA</div>
         </div>
 
         {/* Card 3: Top Upsold Product */}
-        <div className="panel-card space-y-1 border-l-4 border-[var(--rust)]">
-          <div className="text-sm font-semibold text-[var(--text)]">Top Upsold Product</div>
-          <div className="text-xl font-bold text-[var(--text)]">{reportMetrics.kpis.topUpsoldProduct}</div>
-          <div className="text-xs text-[var(--text-muted)] font-medium">{reportMetrics.kpis.topUpsoldNote}</div>
+        <div className="stat-card-base cursor-pointer hover:shadow-md transition-all">
+          <div className="text-xs text-[var(--text-muted)] mb-2 font-medium">Top Upsold Product</div>
+          <div className="text-lg font-bold text-slate-900 mb-1 truncate">{reportMetrics.kpis.topUpsoldProduct}</div>
+          <div className="text-xs text-[var(--text-muted)] truncate">{reportMetrics.kpis.topUpsoldNote}</div>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap items-center gap-3 pt-2 border-b border-[var(--paper-dim)] pb-6">
+      <div className="flex flex-wrap items-center gap-3 pt-2 border-b border-slate-200 pb-6">
         <button
           onClick={handleExportPDF}
-          className="px-5 py-2.5 bg-[var(--paper-dim)] border border-[var(--steel-line)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--text)] text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-xs"
+          className="px-5 py-2.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-900 text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-xs cursor-pointer"
         >
-          <FileText className="w-4 h-4 text-rose-600" />
+          <FileText className="w-4 h-4 text-slate-700" />
           Export PDF Document
         </button>
 
         <button
           onClick={handleExportXLS}
-          className="px-5 py-2.5 bg-[var(--paper-dim)] border border-[var(--steel-line)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--text)] text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-xs"
+          className="px-5 py-2.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-900 text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-xs cursor-pointer"
         >
-          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          <FileSpreadsheet className="w-4 h-4 text-slate-700" />
           Export XLS / CSV Spreadsheet
         </button>
       </div>
@@ -313,36 +313,36 @@ const ReportsAnalytics = () => {
         </div>
         <div>
           <div className="panel-card space-y-4 p-4">
-            <div className="flex items-center justify-between border-b border-[var(--paper-dim)] pb-2">
-              <h3 className="text-sm font-bold text-[var(--text)] flex items-center gap-1.5">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-[var(--teal)]" /> Approval Governance Adherence (%)
               </h3>
-              <span className="text-[11px] font-mono text-[var(--teal)] bg-[var(--teal)]/10 px-2 py-0.5 rounded">Live DB Risk</span>
+              <span className="text-[11px] font-mono text-slate-600 bg-slate-100 border border-slate-300 px-2 py-0.5 rounded font-bold">Live DB Risk</span>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between">
+              <div className="p-3 bg-white border border-slate-300 rounded-xl flex items-center justify-between shadow-2xs hover:border-slate-400 transition-all">
                 <div>
-                  <div className="font-bold text-emerald-900">Low Risk (&lt; 8%)</div>
-                  <div className="text-[11px] text-emerald-700">{reportMetrics.riskAdherence.lowRisk.count} Quotations</div>
+                  <div className="font-bold text-slate-900">Low Risk (&lt; 8%)</div>
+                  <div className="text-[11px] text-slate-500">{reportMetrics.riskAdherence.lowRisk.count} Quotations</div>
                 </div>
-                <div className="text-xl font-bold font-mono text-emerald-700">{reportMetrics.riskAdherence.lowRisk.percent}%</div>
+                <div className="text-xl font-bold font-mono text-slate-900">{reportMetrics.riskAdherence.lowRisk.percent}%</div>
               </div>
 
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
+              <div className="p-3 bg-white border border-slate-300 rounded-xl flex items-center justify-between shadow-2xs hover:border-slate-400 transition-all">
                 <div>
-                  <div className="font-bold text-amber-900">Medium Risk (8 - 15%)</div>
-                  <div className="text-[11px] text-amber-700">{reportMetrics.riskAdherence.mediumRisk.count} Quotations</div>
+                  <div className="font-bold text-slate-900">Medium Risk (8 - 15%)</div>
+                  <div className="text-[11px] text-slate-500">{reportMetrics.riskAdherence.mediumRisk.count} Quotations</div>
                 </div>
-                <div className="text-xl font-bold font-mono text-amber-700">{reportMetrics.riskAdherence.mediumRisk.percent}%</div>
+                <div className="text-xl font-bold font-mono text-slate-900">{reportMetrics.riskAdherence.mediumRisk.percent}%</div>
               </div>
 
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-center justify-between">
+              <div className="p-3 bg-white border border-slate-300 rounded-xl flex items-center justify-between shadow-2xs hover:border-slate-400 transition-all">
                 <div>
-                  <div className="font-bold text-rose-900">High Risk / Flagged (&gt; 15%)</div>
-                  <div className="text-[11px] text-rose-700">{reportMetrics.riskAdherence.highRisk.count} Quotations</div>
+                  <div className="font-bold text-slate-900">High Risk / Flagged (&gt; 15%)</div>
+                  <div className="text-[11px] text-slate-500">{reportMetrics.riskAdherence.highRisk.count} Quotations</div>
                 </div>
-                <div className="text-xl font-bold font-mono text-rose-700">{reportMetrics.riskAdherence.highRisk.percent}%</div>
+                <div className="text-xl font-bold font-mono text-slate-900">{reportMetrics.riskAdherence.highRisk.percent}%</div>
               </div>
             </div>
           </div>

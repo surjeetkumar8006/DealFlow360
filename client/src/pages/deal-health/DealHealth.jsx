@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { AlertOctagon, TrendingDown, Clock, ShieldAlert, Send, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { AlertOctagon, TrendingDown, Clock, ShieldAlert, Send, ArrowUpRight, CheckCircle2, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 
@@ -30,6 +30,8 @@ const DealHealth = () => {
     deliverySlippage: '3 promise dates at risk'
   });
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   const loadDealHealth = async () => {
     try {
@@ -51,6 +53,18 @@ const DealHealth = () => {
   useEffect(() => {
     loadDealHealth();
   }, []);
+
+  const filteredDeals = useMemo(() => {
+    return deals.filter((d) => {
+      const matchStatus = statusFilter === 'ALL' || (d.status || '').toLowerCase() === statusFilter.toLowerCase();
+      const q = searchTerm.toLowerCase();
+      const matchSearch = !searchTerm ||
+        (d.deal || '').toLowerCase().includes(q) ||
+        (d.issue || '').toLowerCase().includes(q) ||
+        (d.action || '').toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+  }, [deals, statusFilter, searchTerm]);
 
   const handleEscalate = async () => {
     try {
@@ -127,6 +141,36 @@ const DealHealth = () => {
         </div>
       </div>
 
+      {/* Deal Anomalies Table Controls */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {['ALL', 'WARNING', 'AT_RISK'].map((st) => (
+            <button
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                statusFilter === st
+                  ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+              }`}
+            >
+              {st === 'ALL' ? `All Alerts (${deals.length})` : st === 'WARNING' ? 'Warning Alerts' : 'At Risk'}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative min-w-[240px]">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search Deal or Issue..."
+            className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-[var(--steel-line)] rounded-xl text-xs text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]/30"
+          />
+          <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-2" />
+        </div>
+      </div>
+
       {/* Deal Anomalies Table */}
       <div className="panel-card overflow-hidden space-y-3">
         <div className="overflow-x-auto">
@@ -140,7 +184,7 @@ const DealHealth = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--paper-dim)]">
-              {deals.map((row) => (
+              {filteredDeals.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="py-3.5 px-4 font-semibold text-[var(--text)]">{row.deal}</td>
                   <td className="py-3.5 px-4 font-medium text-[var(--text)]">{row.issue}</td>
@@ -161,17 +205,17 @@ const DealHealth = () => {
       <div className="flex flex-wrap items-center gap-3 pt-2">
         <button
           onClick={handleEscalate}
-          className="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+          className="px-6 py-2.5 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 hover:border-rose-500 text-xs font-bold rounded-xl shadow-xs flex items-center gap-2 transition-all cursor-pointer"
         >
-          <ArrowUpRight className="w-4 h-4" />
+          <ArrowUpRight className="w-4 h-4 text-rose-600" />
           Escalate
         </button>
 
         <button
           onClick={handleNudgeRep}
-          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+          className="px-6 py-2.5 bg-white hover:bg-slate-50 text-[var(--text)] border border-[var(--steel-line)] hover:border-[var(--ink)] text-xs font-bold rounded-xl shadow-xs flex items-center gap-2 transition-all cursor-pointer"
         >
-          <Send className="w-4 h-4" />
+          <Send className="w-4 h-4 text-[var(--teal)]" />
           Nudge Rep
         </button>
       </div>

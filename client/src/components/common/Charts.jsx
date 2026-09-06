@@ -1,47 +1,56 @@
 import React, { useState } from 'react';
-import { TrendingUp, PieChart, ShieldAlert, Warehouse, Activity, Info } from 'lucide-react';
+import { TrendingUp, PieChart, ShieldAlert, Warehouse, CheckCircle2, AlertTriangle, Layers } from 'lucide-react';
 
-// Sleek Interactive Area & Bar Trend Chart (Paper Theme)
+// Sleek Interactive Bar Chart with Gridlines & Overhead Value Badges
 export const AreaTrendChart = ({ title = "Quarterly Deal Pipeline Trend ($)", data = [] }) => {
   const [metric, setMetric] = useState('REVENUE'); // 'REVENUE' | 'MARGIN'
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   const defaultData = [
-    { label: 'Q1 2025', val: 42000, margin: 38, color: '#2F6F5E' },
-    { label: 'Q2 2025', val: 68000, margin: 42, color: '#2F6F5E' },
-    { label: 'Q3 2025', val: 95000, margin: 35, color: '#B8863B' },
-    { label: 'Q4 2025', val: 124000, margin: 44, color: '#2F6F5E' },
-    { label: 'Q1 2026', val: 158000, margin: 48, color: '#2F6F5E' }
+    { label: 'Draft Deals', val: 15600, margin: 38, color: '#64748B' },
+    { label: 'Pending Appr.', val: 50900, margin: 42, color: '#475569' },
+    { label: 'Approved', val: 97500, margin: 45, color: '#0F172A' },
+    { label: 'Confirmed/Neg.', val: 78000, margin: 48, color: '#1E293B' }
   ];
 
   const chartData = data.length > 0 ? data : defaultData;
   const maxValue = Math.max(...chartData.map((d) => (metric === 'REVENUE' ? d.val : d.margin || 50)), 100);
 
   return (
-    <div className="panel-card space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--paper-dim)] pb-3">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-[var(--teal)]" />
-          <h3 className="text-base font-semibold text-[var(--text)]">{title}</h3>
+    <div className="panel-card space-y-5">
+      {/* Chart Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3.5">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-white rounded-lg border border-slate-300 shadow-2xs">
+            <TrendingUp className="w-4 h-4 text-slate-800" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 leading-none">{title}</h3>
+            <span className="text-xs text-slate-500 font-medium">Real-time pipeline breakdown & stage volume</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 text-xs font-mono font-bold bg-[#2F6F5E]/10 text-[var(--teal)] rounded-full border border-[#2F6F5E]/20">
+        <div className="flex items-center gap-2.5">
+          <span className="px-3 py-1 text-xs font-extrabold bg-white text-slate-800 rounded-full border border-slate-300 shadow-2xs">
             +24.6% YoY Growth
           </span>
-          <div className="flex bg-[var(--paper-dim)] p-0.5 rounded-lg border border-[var(--steel-line)] text-xs">
+          <div className="flex bg-white p-1 rounded-xl border border-slate-300 text-xs shadow-2xs">
             <button
               onClick={() => setMetric('REVENUE')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
-                metric === 'REVENUE' ? 'bg-[var(--ink)] text-white shadow-xs' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+              className={`px-3.5 py-1 rounded-lg font-extrabold transition-all cursor-pointer ${
+                metric === 'REVENUE'
+                  ? 'bg-slate-900 text-white shadow-2xs font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Pipeline ($)
             </button>
             <button
               onClick={() => setMetric('MARGIN')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
-                metric === 'MARGIN' ? 'bg-[var(--ink)] text-white shadow-xs' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+              className={`px-3.5 py-1 rounded-lg font-extrabold transition-all cursor-pointer ${
+                metric === 'MARGIN'
+                  ? 'bg-slate-900 text-white shadow-2xs font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Margin (%)
@@ -50,49 +59,70 @@ export const AreaTrendChart = ({ title = "Quarterly Deal Pipeline Trend ($)", da
         </div>
       </div>
 
-      {/* SVG Bar + Area Glow Overlay */}
-      <div className="relative h-48 w-full pt-6 pb-2 px-2 flex items-end gap-3 border-b border-[var(--paper-dim)]">
+      {/* Chart Visual Container with Y-Axis Gridlines & Overhead Labels (Soft Grey Background behind lines) */}
+      <div className="relative h-56 w-full pt-8 pb-3 px-3 flex items-end gap-4 sm:gap-6 border border-slate-200 bg-slate-50/80 rounded-xl shadow-2xs">
+        {/* Subtle Horizontal Reference Gridlines */}
+        <div className="absolute inset-x-3 top-8 bottom-10 flex flex-col justify-between pointer-events-none opacity-40">
+          <div className="border-b border-dashed border-slate-300 w-full flex justify-between">
+            <span className="text-[9px] font-mono text-slate-500 -mt-2.5">$100k</span>
+          </div>
+          <div className="border-b border-dashed border-slate-300 w-full flex justify-between">
+            <span className="text-[9px] font-mono text-slate-500 -mt-2.5">$75k</span>
+          </div>
+          <div className="border-b border-dashed border-slate-300 w-full flex justify-between">
+            <span className="text-[9px] font-mono text-slate-500 -mt-2.5">$50k</span>
+          </div>
+          <div className="border-b border-dashed border-slate-300 w-full flex justify-between">
+            <span className="text-[9px] font-mono text-slate-500 -mt-2.5">$25k</span>
+          </div>
+        </div>
+
+        {/* Columns */}
         {chartData.map((item, idx) => {
           const currentVal = metric === 'REVENUE' ? item.val : item.margin || 30;
-          const heightPercent = Math.round((currentVal / maxValue) * 100);
+          const heightPercent = Math.max(Math.round((currentVal / maxValue) * 100), 12);
           const isHovered = hoveredIdx === idx;
+          const formattedVal = metric === 'REVENUE' ? `$${(currentVal / 1000).toFixed(1)}k` : `${currentVal}%`;
 
           return (
             <div
               key={idx}
               onMouseEnter={() => setHoveredIdx(idx)}
               onMouseLeave={() => setHoveredIdx(null)}
-              className="flex-1 flex flex-col items-center gap-2 group h-full justify-end relative cursor-pointer"
+              className="flex-1 flex flex-col items-center gap-2 group h-full justify-end relative cursor-pointer z-10"
             >
-              {/* Floating Tooltip */}
-              {isHovered && (
-                <div className="absolute -top-10 z-20 px-3 py-1.5 rounded-xl bg-[var(--ink)] text-white text-xs font-mono shadow-xl border border-white/20 flex flex-col items-center whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
-                  <span className="font-bold">
-                    {metric === 'REVENUE' ? `$${(currentVal / 1000).toFixed(1)}k` : `${currentVal}% Margin`}
-                  </span>
-                  <span className="text-[10px] text-slate-300">{item.label}</span>
-                </div>
-              )}
-
-              {/* Bar Container - Slim & Elegant Bar Width */}
-              <div className="w-7 sm:w-9 max-w-[34px] bg-[var(--paper-dim)]/80 rounded-t-lg overflow-hidden flex flex-col justify-end h-full max-h-[140px] relative border border-[var(--steel-line)]/40 shadow-xs">
+              {/* Solid Executive Bar (Badge mounts directly on bar top) */}
+              <div className="w-full max-w-[44px] flex flex-col justify-end h-[140px] relative">
                 <div
-                  className={`w-full transition-all duration-500 rounded-t-lg ${
-                    isHovered ? 'brightness-125 shadow-md scale-y-[1.02]' : 'opacity-90'
+                  className={`w-full transition-all duration-500 rounded-t-lg shadow-sm relative flex justify-center ${
+                    isHovered ? 'brightness-110 shadow-md scale-y-[1.02]' : 'opacity-95'
                   }`}
                   style={{
                     height: `${heightPercent}%`,
-                    backgroundColor: item.color || (metric === 'REVENUE' ? 'var(--teal)' : 'var(--gold)')
+                    backgroundColor: item.color || (metric === 'REVENUE' ? '#0F172A' : '#334155')
                   }}
                 >
-                  <div className="w-full h-1 bg-white/40 rounded-t-lg"></div>
+                  <div className="w-full h-1 bg-white/30 rounded-t-lg"></div>
+
+                  {/* Overhead Value Pill Badge mounted directly above bar top */}
+                  <div
+                    className={`absolute -top-7 px-2 py-0.5 rounded-md text-[10.5px] font-extrabold font-mono transition-all duration-200 shadow-2xs border whitespace-nowrap z-20 ${
+                      isHovered
+                        ? 'bg-slate-900 text-white border-slate-900 scale-105'
+                        : 'bg-white text-slate-800 border-slate-300'
+                    }`}
+                  >
+                    {formattedVal}
+                  </div>
                 </div>
               </div>
 
-              {/* Label */}
-              <span className={`text-[11px] font-mono transition-colors font-semibold ${
-                isHovered ? 'text-[var(--teal)] scale-105' : 'text-[var(--text-muted)]'
-              }`}>
+              {/* Stage Title Label */}
+              <span
+                className={`text-[11.5px] font-semibold transition-colors truncate max-w-full text-center ${
+                  isHovered ? 'text-slate-950 font-extrabold' : 'text-slate-700'
+                }`}
+              >
                 {item.label}
               </span>
             </div>
@@ -100,115 +130,209 @@ export const AreaTrendChart = ({ title = "Quarterly Deal Pipeline Trend ($)", da
         })}
       </div>
 
-      <div className="flex items-center justify-between text-xs text-[var(--text-muted)] pt-1 font-medium">
-        <span>Quarterly Breakdown</span>
-        <span>Target: <strong>$150,000 / QTR</strong></span>
+      {/* Footer KPI */}
+      <div className="flex items-center justify-between text-xs text-slate-600 font-semibold pt-1">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Quarterly Live Pipeline Breakdown
+        </span>
+        <span className="font-mono text-slate-800">
+          Target: <strong className="text-slate-950">$150,000 / QTR</strong>
+        </span>
       </div>
     </div>
   );
 };
 
-// Donut / Ring Progress Breakdown Chart with Centered Risk Gauge
-export const DonutProgressChart = ({ title = "Discount Risk Level Distribution", items = [] }) => {
+// Sleek Governance Adherence Interactive SVG Pie / Donut Chart
+export const DonutProgressChart = ({ title = "Discount Risk Governance", items = [] }) => {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
   const defaultItems = [
-    { label: 'Low Risk (< 8%)', value: 65, color: '#2F6F5E', count: '14 Quotes' },
-    { label: 'Medium Risk (8 - 15%)', value: 22, color: '#B8863B', count: '5 Quotes' },
-    { label: 'High Risk / Flagged (> 15%)', value: 13, color: '#9E2A2B', count: '3 Quotes' }
+    { label: 'Bronze Tier (≤5%)', value: 38, color: '#0F172A', status: 'Compliant' },
+    { label: 'Silver Tier (≤10%)', value: 32, color: '#2563EB', status: 'Optimal' },
+    { label: 'Gold Tier (≤15%)', value: 30, color: '#D97706', status: 'Optimal' }
   ];
 
   const chartItems = items.length > 0 ? items : defaultItems;
+  const totalVal = chartItems.reduce((sum, item) => sum + (item.value || 0), 0) || 1;
+
+  // SVG parameters for donut pie geometry
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius; // ~251.32
+  let accumulatedPercent = 0;
 
   return (
-    <div className="panel-card space-y-4">
-      <div className="flex items-center justify-between border-b border-[var(--paper-dim)] pb-3">
-        <div className="flex items-center gap-2">
-          <PieChart className="w-5 h-5 text-[var(--gold)]" />
-          <h3 className="text-base font-semibold text-[var(--text)]">{title}</h3>
+    <div className="panel-card space-y-4 bg-white">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3.5">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-white rounded-lg border border-slate-300">
+            <PieChart className="w-4 h-4 text-slate-800" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 leading-none">{title}</h3>
+            <span className="text-xs text-slate-500 font-medium">Blended risk & tier limits</span>
+          </div>
         </div>
-        <span className="text-xs text-[var(--text-muted)] font-mono">Real-time Governance</span>
+        <span className="text-[11px] font-mono font-bold bg-white border border-slate-300 text-slate-800 px-2 py-0.5 rounded">
+          Real-time Audit
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-        {/* SVG Ring Visual */}
-        <div className="sm:col-span-5 flex justify-center relative py-2">
-          <div className="w-32 h-32 rounded-full border-8 border-slate-100 flex flex-col items-center justify-center shadow-inner bg-[#FAF9F5] relative">
-            <ShieldAlert className="w-6 h-6 text-[var(--gold)] mb-0.5 animate-pulse" />
-            <span className="text-lg font-bold font-mono text-[var(--text)]">18.5</span>
-            <span className="text-[9px] font-bold tracking-wider text-[var(--rust)] uppercase">High Risk</span>
+      {/* Main Visual Content Grid: Donut Pie + Legend */}
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center pt-1">
+        {/* Interactive SVG Pie Donut Visual */}
+        <div className="sm:col-span-5 flex flex-col items-center justify-center py-2 relative">
+          <div className="w-36 h-36 relative flex items-center justify-center">
+            <svg viewBox="0 0 120 120" className="w-full h-full transform -rotate-90">
+              {chartItems.map((item, idx) => {
+                const percent = (item.value || 0) / totalVal;
+                const strokeDasharray = `${percent * circumference} ${circumference}`;
+                const strokeDashoffset = -accumulatedPercent * circumference;
+                accumulatedPercent += percent;
+                const isHovered = hoveredIndex === idx;
+
+                return (
+                  <circle
+                    key={idx}
+                    cx="60"
+                    cy="60"
+                    r={radius}
+                    fill="transparent"
+                    stroke={item.color || '#334155'}
+                    strokeWidth={isHovered ? 24 : 18}
+                    strokeDasharray={strokeDasharray}
+                    strokeDashoffset={strokeDashoffset}
+                    className="transition-all duration-300 cursor-pointer origin-center"
+                    onMouseEnter={() => setHoveredIndex(idx)}
+                    onMouseLeave={() => setHoveredIndex(null)}
+                  />
+                );
+              })}
+            </svg>
+
+            {/* Donut Center Info Badge */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+              <span className="text-lg font-extrabold font-mono text-slate-950 leading-tight">
+                {hoveredIndex !== null ? `${chartItems[hoveredIndex].value}%` : '94.6%'}
+              </span>
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500">
+                {hoveredIndex !== null ? chartItems[hoveredIndex].label.split(' ')[0] : 'Compliance'}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Legend Progress Bars */}
-        <div className="sm:col-span-7 space-y-3">
-          {chartItems.map((item, idx) => (
-            <div key={idx} className="space-y-1 group">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-[var(--text)] flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></span>
-                  {item.label}
-                </span>
-                <span className="font-mono text-[var(--text-muted)] group-hover:text-[var(--text)]">
-                  {item.value}% <span className="text-[10px] opacity-70">({item.count})</span>
-                </span>
+        {/* Legend Tier Items */}
+        <div className="sm:col-span-7 space-y-2.5">
+          {chartItems.map((item, idx) => {
+            const isHovered = hoveredIndex === idx;
+            return (
+              <div
+                key={idx}
+                onMouseEnter={() => setHoveredIndex(idx)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                  isHovered
+                    ? 'bg-slate-100 border-slate-400 shadow-2xs'
+                    : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className="flex justify-between items-center text-xs font-bold gap-2">
+                  <span className="text-slate-900 flex items-center gap-2 min-w-0">
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0 shadow-2xs"
+                      style={{ backgroundColor: item.color }}
+                    ></span>
+                    <span className="truncate">{item.label}</span>
+                  </span>
+                  <span className="font-mono text-slate-900 font-extrabold shrink-0 bg-white px-2 py-0.5 rounded border border-slate-300 text-[11px] shadow-2xs">
+                    {item.value}%
+                  </span>
+                </div>
               </div>
-              <div className="w-full bg-[var(--paper-dim)] h-2.5 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700 group-hover:brightness-110"
-                  style={{
-                    width: `${item.value}%`,
-                    backgroundColor: item.color
-                  }}
-                ></div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
   );
 };
 
-// Horizontal Warehouse Stock Level Breakdown Bar Chart
+// Horizontal Multi-Depot Fulfillment Readiness Matrix
 export const HorizontalBarChart = ({ title = "Multi-Depot Fulfillment Readiness", data = [] }) => {
   const defaultData = [
-    { label: 'Main Warehouse (Laptop Pro 14)', val: 22, max: 40, status: '22 Avail', color: '#2F6F5E' },
-    { label: 'East Depot (Laptop Pro 14)', val: 4, max: 10, status: '4 Low Stock', color: '#B8863B' },
-    { label: 'Main Warehouse (Docking Station)', val: 53, max: 65, status: '53 Ready', color: '#2F6F5E' },
-    { label: 'West Hub (Server Node)', val: 7, max: 15, status: '7 Avail', color: '#94A3B8' }
+    { label: 'Main Warehouse', product: 'Laptop Pro 14', val: 22, max: 40, status: '22 Avail', color: '#0F172A', tag: 'Optimal' },
+    { label: 'East Depot', product: 'Onsite Setup Service', val: 4, max: 10, status: '4 Low Stock', color: '#64748B', tag: 'Low Stock' },
+    { label: 'Main Warehouse', product: 'Docking Station', val: 53, max: 65, status: '53 Ready', color: '#1E293B', tag: 'Optimal' },
+    { label: 'West Hub', product: 'Enterprise Server Node', val: 7, max: 15, status: '7 Avail', color: '#475569', tag: 'Optimal' }
   ];
 
   const chartData = data.length > 0 ? data : defaultData;
 
   return (
-    <div className="panel-card space-y-4">
-      <div className="flex items-center justify-between border-b border-[var(--paper-dim)] pb-3">
-        <div className="flex items-center gap-2">
-          <Warehouse className="w-5 h-5 text-[var(--teal)]" />
-          <h3 className="text-base font-semibold text-[var(--text)]">{title}</h3>
+    <div className="panel-card space-y-4 bg-white">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3.5">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-white rounded-lg border border-slate-300">
+            <Warehouse className="w-4 h-4 text-slate-800" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 leading-none">{title}</h3>
+            <span className="text-xs text-slate-500 font-medium">Warehouse dispatch & stock allocation</span>
+          </div>
         </div>
-        <span className="text-xs font-mono text-[var(--teal)] font-semibold">Live Inventory Sync</span>
+        <span className="text-xs font-bold text-slate-800 bg-white border border-slate-300 px-2.5 py-1 rounded-md flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Live Sync
+        </span>
       </div>
 
-      <div className="space-y-3.5">
+      {/* Stock Cards Matrix */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         {chartData.map((item, idx) => {
           const widthPercent = Math.round((item.val / (item.max || 100)) * 100);
+          const isLow = item.val <= 5 || (item.tag || '').toLowerCase().includes('low');
 
           return (
-            <div key={idx} className="space-y-1 group">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-[var(--text)]">{item.label}</span>
-                <span className="font-mono text-xs font-bold" style={{ color: item.color }}>
-                  {item.status || `${item.val} units`}
+            <div key={idx} className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-2.5 hover:border-slate-300 transition-all shadow-2xs">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
+                    <Warehouse className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                    {item.label}
+                  </div>
+                  <div className="text-[11px] text-slate-600 font-medium">{item.product || item.label}</div>
+                </div>
+
+                <span
+                  className={`text-[10px] font-extrabold px-2 py-0.5 rounded border uppercase font-mono ${
+                    isLow
+                      ? 'bg-amber-50 text-amber-800 border-amber-300'
+                      : 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                  }`}
+                >
+                  {item.status || `${item.val} Units`}
                 </span>
               </div>
-              <div className="w-full bg-[var(--paper-dim)] h-3 rounded-lg overflow-hidden border border-[var(--steel-line)]/50">
-                <div
-                  className="h-full rounded-lg transition-all duration-700 group-hover:brightness-110"
-                  style={{
-                    width: `${widthPercent}%`,
-                    backgroundColor: item.color || 'var(--teal)'
-                  }}
-                ></div>
+
+              {/* Progress Meter Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] font-mono text-slate-500 font-bold">
+                  <span>Stock Capacity</span>
+                  <span>{widthPercent}% ({item.val}/{item.max || 100})</span>
+                </div>
+                <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300/60">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${widthPercent}%`,
+                      backgroundColor: item.color || '#0F172A'
+                    }}
+                  ></div>
+                </div>
               </div>
             </div>
           );
@@ -217,3 +341,4 @@ export const HorizontalBarChart = ({ title = "Multi-Depot Fulfillment Readiness"
     </div>
   );
 };
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -48,9 +48,29 @@ const ApprovalsQueue = () => {
     }
   };
 
-  const displayedItems = pendingOnlyFilter
-    ? items.filter((item) => ['PENDING_APPROVAL', 'PENDING_FINANCE'].includes(item.status))
-    : items;
+  const [filterMode, setFilterMode] = useState('ALL'); // 'ALL' | 'PENDING' | 'RETURNED' | 'APPROVED'
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const displayedItems = useMemo(() => {
+    return items.filter((item) => {
+      let matchesFilter = true;
+      if (filterMode === 'PENDING') {
+        matchesFilter = ['PENDING_APPROVAL', 'PENDING_FINANCE'].includes(item.status);
+      } else if (filterMode === 'RETURNED') {
+        matchesFilter = item.status === 'REVISION_REQUESTED';
+      } else if (filterMode === 'APPROVED') {
+        matchesFilter = ['APPROVED', 'CONFIRMED'].includes(item.status);
+      }
+
+      let matchesSearch = true;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        matchesSearch = (item.quoteNumber || '').toLowerCase().includes(q) || (item.customerName || '').toLowerCase().includes(q);
+      }
+
+      return matchesFilter && matchesSearch;
+    });
+  }, [items, filterMode, searchQuery]);
 
   return (
     <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -71,21 +91,72 @@ const ApprovalsQueue = () => {
         )}
       </div>
 
-      {/* Summary Status Counter Pills matching Wireframe */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="bg-[#B8863B] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-xs flex items-center gap-2">
-          <span>{counts?.pending ?? items.filter((i) => ['PENDING_APPROVAL', 'PENDING_FINANCE'].includes(i.status)).length}</span>
-          <span>Pending</span>
+      {/* Summary Status Counter Pills & Search Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[var(--steel-line)] shadow-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setFilterMode(filterMode === 'PENDING' ? 'ALL' : 'PENDING')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              filterMode === 'PENDING'
+                ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+            }`}
+          >
+            <span>{counts?.pending ?? items.filter((i) => ['PENDING_APPROVAL', 'PENDING_FINANCE'].includes(i.status)).length}</span>
+            <span>Pending</span>
+          </button>
+
+          <button
+            onClick={() => setFilterMode(filterMode === 'RETURNED' ? 'ALL' : 'RETURNED')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              filterMode === 'RETURNED'
+                ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+            }`}
+          >
+            <span>{counts?.returned ?? items.filter((i) => i.status === 'REVISION_REQUESTED').length}</span>
+            <span>Returned</span>
+          </button>
+
+          <button
+            onClick={() => setFilterMode(filterMode === 'APPROVED' ? 'ALL' : 'APPROVED')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              filterMode === 'APPROVED'
+                ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+            }`}
+          >
+            <span>{counts?.approved ?? items.filter((i) => ['APPROVED', 'CONFIRMED'].includes(i.status)).length}</span>
+            <span>Approved / Confirmed</span>
+          </button>
+
+          {filterMode !== 'ALL' && (
+            <button
+              onClick={() => setFilterMode('ALL')}
+              className="text-xs text-slate-700 hover:text-slate-950 underline font-semibold ml-1 cursor-pointer"
+            >
+              Reset Filter
+            </button>
+          )}
         </div>
 
-        <div className="bg-[var(--rust)] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-xs flex items-center gap-2">
-          <span>{counts?.returned ?? items.filter((i) => i.status === 'REVISION_REQUESTED').length}</span>
-          <span>Returned</span>
-        </div>
-
-        <div className="bg-[var(--teal)] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-xs flex items-center gap-2">
-          <span>{counts?.approved ?? items.filter((i) => i.status === 'APPROVED').length}</span>
-          <span>Approved</span>
+        {/* Search Input Box */}
+        <div className="w-full sm:w-64 relative">
+          <input
+            type="text"
+            placeholder="Search Quote # or Customer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-3 py-1.5 border border-[var(--steel-line)] rounded-lg text-xs font-medium focus:outline-2 focus:outline-[var(--teal)] bg-[var(--paper-dim)]/50"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 

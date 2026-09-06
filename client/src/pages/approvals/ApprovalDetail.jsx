@@ -173,8 +173,8 @@ const ApprovalDetail = () => {
       {/* 4-Step Approval Chain Visual Stepper matching Wireframe - Dynamic */}
       <div className="panel-card py-6 px-4">
         <div className="flex items-center justify-between max-w-2xl mx-auto relative">
-          {/* Connecting Line */}
-          <div className="absolute top-1/2 left-8 right-8 h-1 bg-[var(--paper-dim)] -translate-y-1/2 -z-0"></div>
+          {/* High-Visibility Crisp Connecting Line */}
+          <div className="absolute top-1/2 left-8 right-8 h-1.5 bg-slate-300 rounded-full -translate-y-1/2 z-0"></div>
 
           {(approval.stepper || [
             { step: 1, label: 'Submitted', status: 'COMPLETED' },
@@ -183,30 +183,30 @@ const ApprovalDetail = () => {
             { step: 4, label: 'Confirmed', status: 'PENDING' }
           ]).map((st) => {
             let icon = st.step;
-            let circleBg = 'bg-slate-300 text-slate-600';
+            let circleBg = 'bg-slate-200 text-slate-600 border border-slate-300';
             let labelStyle = 'text-[var(--text-muted)] font-medium';
 
             if (st.status === 'COMPLETED') {
-              circleBg = 'bg-emerald-600 text-white shadow-md';
-              icon = <Check className="w-5 h-5" />;
+              circleBg = 'bg-emerald-600 text-white shadow-sm ring-4 ring-emerald-100';
+              icon = <Check className="w-5 h-5 stroke-[2.5]" />;
               labelStyle = 'text-emerald-700 font-bold';
             } else if (st.status === 'ACTIVE') {
-              circleBg = 'bg-blue-600 text-white shadow-md ring-4 ring-blue-100';
+              circleBg = 'bg-slate-900 text-white shadow-md ring-4 ring-slate-200';
               icon = <ShieldAlert className="w-5 h-5" />;
-              labelStyle = 'text-blue-700 font-bold';
+              labelStyle = 'text-slate-900 font-bold';
             } else if (st.status === 'REVISION_REQUESTED') {
-              circleBg = 'bg-amber-600 text-white shadow-md ring-4 ring-amber-100';
+              circleBg = 'bg-amber-600 text-white shadow-sm ring-4 ring-amber-100';
               icon = <RotateCcw className="w-5 h-5" />;
               labelStyle = 'text-amber-700 font-bold';
             } else if (st.status === 'REJECTED') {
-              circleBg = 'bg-rose-600 text-white shadow-md ring-4 ring-rose-100';
+              circleBg = 'bg-rose-600 text-white shadow-sm ring-4 ring-rose-100';
               icon = <X className="w-5 h-5" />;
               labelStyle = 'text-rose-700 font-bold';
             }
 
             return (
-              <div key={st.step} className="relative z-10 flex flex-col items-center gap-2 bg-[#FAF9F5] px-2">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${circleBg}`}>
+              <div key={st.step} className="relative z-10 flex flex-col items-center gap-2 bg-white px-3">
+                <div className={`w-9.5 h-9.5 rounded-full flex items-center justify-center font-bold text-xs ${circleBg}`}>
                   {icon}
                 </div>
                 <span className={`text-xs ${labelStyle}`}>{st.label}</span>

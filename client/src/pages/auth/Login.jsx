@@ -362,11 +362,11 @@ const Login = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex flex-col gap-2 pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary-gold text-xs py-2 px-5"
+                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? 'Processing...' : mode === 'login' ? 'Log in' : 'Sign up'}
               </button>
@@ -375,7 +375,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => alert('Demo Password: password123')}
-                  className="text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+                  className="text-xs text-[var(--text-muted)] hover:text-slate-900 transition-colors text-center"
                 >
                   Forgot password?
                 </button>
@@ -395,58 +395,58 @@ const Login = () => {
           </ul>
 
           {/* Hackathon 1-Click Demo Login Bar */}
-          <div className="mt-3 pt-3 border-t border-[var(--steel-line)] space-y-1.5">
-            <div className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider flex items-center justify-between">
-              <span className="flex items-center gap-1 text-[var(--gold-deep)]">
-                <Zap className="w-3 h-3" /> 1-Click Demo Logins
+          <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
+            <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-1 text-slate-800">
+                <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> 1-Click Demo Logins
               </span>
-              <span className="text-[9px] bg-[var(--paper-dim)] px-1.5 py-0.5 rounded border border-[var(--steel)]">Pre-Seeded</span>
+              <span className="text-[9px] bg-slate-100 px-2 py-0.5 rounded-full border border-slate-300 text-slate-700 font-mono">Pre-Seeded</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin('sales_rep')}
-                className="p-1.5 bg-[var(--card)] hover:bg-[var(--paper-dim)] border border-[var(--steel-line)] rounded text-left transition-all flex flex-col"
+                className="p-2 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 rounded-xl text-left transition-all flex flex-col shadow-2xs cursor-pointer group"
               >
-                <span className="text-[11px] font-semibold text-[var(--text)]">Sales Rep</span>
-                <span className="text-[9px] text-[var(--text-muted)] truncate">sales@dealflow360.com</span>
+                <span className="text-[11px] font-bold text-slate-900 group-hover:text-slate-950">Sales Rep</span>
+                <span className="text-[9.5px] text-slate-500 font-mono truncate">sales@...</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin('sales_manager')}
-                className="p-1.5 bg-[var(--card)] hover:bg-[var(--paper-dim)] border border-[var(--steel-line)] rounded text-left transition-all flex flex-col"
+                className="p-2 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 rounded-xl text-left transition-all flex flex-col shadow-2xs cursor-pointer group"
               >
-                <span className="text-[11px] font-semibold text-[var(--text)]">Manager</span>
-                <span className="text-[9px] text-[var(--text-muted)] truncate">manager@dealflow360.com</span>
+                <span className="text-[11px] font-bold text-slate-900 group-hover:text-slate-950">Manager</span>
+                <span className="text-[9.5px] text-slate-500 font-mono truncate">manager@...</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin('finance')}
-                className="p-1.5 bg-[var(--card)] hover:bg-[var(--paper-dim)] border border-[var(--steel-line)] rounded text-left transition-all flex flex-col"
+                className="p-2 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 rounded-xl text-left transition-all flex flex-col shadow-2xs cursor-pointer group"
               >
-                <span className="text-[11px] font-semibold text-[var(--text)]">Finance</span>
-                <span className="text-[9px] text-[var(--text-muted)] truncate">finance@dealflow360.com</span>
+                <span className="text-[11px] font-bold text-slate-900 group-hover:text-slate-950">Finance</span>
+                <span className="text-[9.5px] text-slate-500 font-mono truncate">finance@...</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin('admin')}
-                className="p-1.5 bg-[var(--card)] hover:bg-[var(--paper-dim)] border border-[var(--steel-line)] rounded text-left transition-all flex flex-col"
+                className="p-2 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 rounded-xl text-left transition-all flex flex-col shadow-2xs cursor-pointer group"
               >
-                <span className="text-[11px] font-semibold text-[var(--text)]">Admin</span>
-                <span className="text-[9px] text-[var(--text-muted)] truncate">admin@dealflow360.com</span>
+                <span className="text-[11px] font-bold text-slate-900 group-hover:text-slate-950">Admin</span>
+                <span className="text-[9.5px] text-slate-500 font-mono truncate">admin@...</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin('customer')}
-                className="p-1.5 bg-[var(--card)] hover:bg-[var(--paper-dim)] border border-[var(--steel-line)] rounded text-left transition-all flex flex-col col-span-2"
+                className="p-2 bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 rounded-xl text-left transition-all flex flex-col col-span-2 shadow-2xs cursor-pointer group"
               >
-                <span className="text-[11px] font-semibold text-[var(--text)]">Customer Portal</span>
-                <span className="text-[9px] text-[var(--text-muted)] truncate">customer@example.com</span>
+                <span className="text-[11px] font-bold text-slate-900 group-hover:text-slate-950">Customer Portal</span>
+                <span className="text-[9.5px] text-slate-500 font-mono truncate">customer@example.com</span>
               </button>
             </div>
           </div>

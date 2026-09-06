@@ -54,10 +54,10 @@ const Workspace = () => {
   const dynamicPipelineTrend = useMemo(() => {
     if (!quotationsList || quotationsList.length === 0) {
       return [
-        { label: 'Draft', val: 15600, color: 'var(--ink)' },
-        { label: 'Pending', val: 50900, color: 'var(--gold)' },
-        { label: 'Approved', val: 9750, color: 'var(--teal)' },
-        { label: 'Confirmed', val: 41000, color: 'var(--gold)' },
+        { label: 'Draft Deals', val: 15600, color: '#64748B' },
+        { label: 'Pending Appr.', val: 50900, color: '#475569' },
+        { label: 'Approved', val: 9750, color: '#0F172A' },
+        { label: 'Confirmed/Neg.', val: 41000, color: '#1E293B' },
       ];
     }
 
@@ -67,10 +67,10 @@ const Workspace = () => {
     const confirmedSum = quotationsList.filter((q) => q.status === 'CONFIRMED' || q.status === 'NEGOTIATION').reduce((acc, q) => acc + (q.totalAmount || 0), 0);
 
     return [
-      { label: 'Draft Deals', val: draftSum || 15600, color: 'var(--ink)' },
-      { label: 'Pending Appr.', val: pendingSum || 50900, color: 'var(--gold)' },
-      { label: 'Approved', val: approvedSum || 9750, color: 'var(--teal)' },
-      { label: 'Confirmed/Neg.', val: confirmedSum || 56300, color: 'var(--gold)' },
+      { label: 'Draft Deals', val: draftSum || 15600, color: '#64748B' },
+      { label: 'Pending Appr.', val: pendingSum || 50900, color: '#475569' },
+      { label: 'Approved', val: approvedSum || 9750, color: '#0F172A' },
+      { label: 'Confirmed/Neg.', val: confirmedSum || 56300, color: '#1E293B' },
     ];
   }, [quotationsList]);
 
@@ -78,9 +78,9 @@ const Workspace = () => {
   const dynamicGovernanceData = useMemo(() => {
     if (!quotationsList || quotationsList.length === 0) {
       return [
-        { label: 'Bronze Tier (≤5%)', value: 100, color: '#B08D57' },
-        { label: 'Silver Tier (≤10%)', value: 92.1, color: '#B7BAC2' },
-        { label: 'Gold Tier (≤15%)', value: 91.8, color: 'var(--gold)' },
+        { label: 'Bronze Tier (≤5%)', value: 100, color: '#0F172A' },
+        { label: 'Silver Tier (≤10%)', value: 92.1, color: '#334155' },
+        { label: 'Gold Tier (≤15%)', value: 91.8, color: '#64748B' },
       ];
     }
 
@@ -92,9 +92,9 @@ const Workspace = () => {
     };
 
     return [
-      { label: 'Bronze Tier (≤5%)', value: getTierRate('Bronze', 100), color: '#B08D57' },
-      { label: 'Silver Tier (≤10%)', value: getTierRate('Silver', 92.1), color: '#B7BAC2' },
-      { label: 'Gold Tier (≤15%)', value: getTierRate('Gold', 91.8), color: 'var(--gold)' },
+      { label: 'Bronze Tier (≤5%)', value: getTierRate('Bronze', 100), color: '#0F172A' },
+      { label: 'Silver Tier (≤10%)', value: getTierRate('Silver', 92.1), color: '#334155' },
+      { label: 'Gold Tier (≤15%)', value: getTierRate('Gold', 91.8), color: '#64748B' },
     ];
   }, [quotationsList]);
 

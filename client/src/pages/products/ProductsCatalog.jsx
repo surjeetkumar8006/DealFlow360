@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Settings, Info, Package, Search, Filter, Edit3, Trash2, Check, Warehouse, ArrowRight, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -73,6 +73,18 @@ const ProductsCatalog = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchCat = categoryFilter === 'ALL' || (p.category || '').toLowerCase() === categoryFilter.toLowerCase();
+      const matchSearch = !searchTerm ||
+        (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.category || '').toLowerCase().includes(searchTerm.toLowerCase());
+      return matchCat && matchSearch;
+    });
+  }, [products, categoryFilter, searchTerm]);
 
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -233,9 +245,9 @@ const ProductsCatalog = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-2 transition-all"
+            className="px-5 py-2.5 bg-white hover:bg-slate-50 text-[var(--text)] border border-[var(--steel-line)] hover:border-[var(--ink)] text-xs font-bold rounded-xl shadow-xs flex items-center gap-2 transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 text-[var(--teal)]" />
             + New Product
           </button>
 
@@ -270,11 +282,37 @@ const ProductsCatalog = () => {
         </div>
       </div>
 
-      {/* Products Section Header Badge */}
-      <div className="flex items-center justify-between">
-        <span className="px-4 py-1.5 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold flex items-center gap-1.5">
-          <Package className="w-3.5 h-3.5" /> Products Catalog ({products.length})
-        </span>
+      {/* Products Section Header & Search / Filter Controls */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="px-3 py-1 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-bold flex items-center gap-1.5 mr-2">
+            <Package className="w-3.5 h-3.5" /> ({filteredProducts.length})
+          </span>
+          {['ALL', 'Hardware', 'Services', 'Subscription'].map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setCategoryFilter(cat)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                categoryFilter === cat
+                  ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+              }`}
+            >
+              {cat === 'ALL' ? 'All Categories' : cat}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative min-w-[240px]">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search Product or Category..."
+            className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-[var(--steel-line)] rounded-xl text-xs text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]/30"
+          />
+          <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-2" />
+        </div>
       </div>
 
       {/* Products Catalog Table */}
@@ -295,7 +333,7 @@ const ProductsCatalog = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--paper-dim)]">
-              {products.map((p) => {
+              {filteredProducts.map((p) => {
                 const pKey = p._id || p.id;
                 const stockVal = p.quantityOnHand !== undefined ? p.quantityOnHand : 50;
                 return (

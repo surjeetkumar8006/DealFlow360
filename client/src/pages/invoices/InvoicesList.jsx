@@ -1,31 +1,38 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, ArrowRight, CheckCircle2, Clock, ShieldAlert, Check, UserCheck } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchQuotationsThunk } from '../../store/slices/quotationSlice';
+import { DollarSign, ArrowRight, CheckCircle2, Clock, ShieldAlert, Check, UserCheck, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 const DEFAULT_INVOICES = [
-  { id: 'inv-1003', invoiceNumber: 'INV-1003', customer: 'Beta Industries', amount: '$24,148', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25' },
-  { id: 'inv-9635', invoiceNumber: 'INV-9635', customer: 'Test', amount: '$30,448', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25' },
-  { id: 'inv-1042', invoiceNumber: 'INV-1042', customer: 'Acme Corp', amount: '$2,730', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 10' },
-  { id: 'inv-6685', invoiceNumber: 'INV-6685', customer: 'New Prod.', amount: '$34,600', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25' },
-  { id: 'inv-1038', invoiceNumber: 'INV-1038', customer: 'Nova Retail', amount: '$9,750', status: 'Paid', approvalStatus: 'APPROVED', dueDate: 'Aug 30' },
-  { id: 'inv-1006', invoiceNumber: 'INV-1006', customer: 'Orion Ltd', amount: '$41,000', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25' },
-  { id: 'inv-1043', invoiceNumber: 'INV-1043', customer: 'Acme Corp', amount: '$46', status: 'Paid', approvalStatus: 'AUTO_APPROVED', dueDate: 'Sep 15' },
-  { id: 'inv-1035', invoiceNumber: 'INV-1035', customer: 'Beta Industries', amount: '$1,200', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Oct 05' }
+  { id: 'inv-1003', invoiceNumber: 'INV-1003', customer: 'Beta Industries', amount: '$24,148', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25', orderRef: 'Q-1003' },
+  { id: 'inv-9635', invoiceNumber: 'INV-9635', customer: 'Test', amount: '$30,448', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25', orderRef: 'Q-9635' },
+  { id: 'inv-1042', invoiceNumber: 'INV-1042', customer: 'Acme Corp', amount: '$2,730', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 10', orderRef: 'Q-1042' },
+  { id: 'inv-6685', invoiceNumber: 'INV-6685', customer: 'New Prod.', amount: '$34,600', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25', orderRef: 'Q-6685' },
+  { id: 'inv-1038', invoiceNumber: 'INV-1038', customer: 'Nova Retail', amount: '$9,750', status: 'Paid', approvalStatus: 'APPROVED', dueDate: 'Aug 30', orderRef: 'Q-1004' },
+  { id: 'inv-1006', invoiceNumber: 'INV-1006', customer: 'Orion Ltd', amount: '$41,000', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25', orderRef: 'Q-1006' },
+  { id: 'inv-1043', invoiceNumber: 'INV-1043', customer: 'Acme Corp', amount: '$46', status: 'Paid', approvalStatus: 'AUTO_APPROVED', dueDate: 'Sep 15', orderRef: 'Q-1043' },
+  { id: 'inv-1035', invoiceNumber: 'INV-1035', customer: 'Beta Industries', amount: '$1,200', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Oct 05', orderRef: 'Q-1039' }
 ];
 
 const InvoicesList = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { role } = useAuth();
   const currentRole = (role || 'sales_rep').toLowerCase();
+
+  const { quotationsList } = useSelector((state) => state.quotation);
 
   // Table dataset initialized cleanly
   const [invoices, setInvoices] = useState(DEFAULT_INVOICES);
   const [filter, setFilter] = useState('ALL'); // 'ALL' | 'Unpaid' | 'Paid' | 'PendingApproval'
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    dispatch(fetchQuotationsThunk());
     const fetchInvoices = async () => {
       try {
         const res = await api.get('/invoices').catch(() => null);
@@ -37,27 +44,75 @@ const InvoicesList = () => {
       }
     };
     fetchInvoices();
-  }, []);
+  }, [dispatch]);
+
+  // Filter invoices strictly to only those belonging to CONFIRMED quotations
+  const confirmedInvoices = useMemo(() => {
+    const confirmedQuoteRefs = new Set();
+    (quotationsList || []).forEach((q) => {
+      if (q.status === 'CONFIRMED') {
+        confirmedQuoteRefs.add(q.quoteNumber);
+        if (q._id) confirmedQuoteRefs.add(String(q._id));
+        if (q.id) confirmedQuoteRefs.add(String(q.id));
+      }
+    });
+
+    // Default seed confirmed quotation references
+    ['Q-1006', 'Q-6685', 'Q-1043', 'INV-1006', 'INV-6685', 'INV-1043'].forEach((r) => confirmedQuoteRefs.add(r));
+
+    const existingRefs = new Set(invoices.map((i) => (i.orderRef || '').replace(' (Recurring)', '').trim()));
+
+    const dynamicFromQuotes = (quotationsList || [])
+      .filter((q) => q.status === 'CONFIRMED' && !existingRefs.has(q.quoteNumber))
+      .map((q) => ({
+        _id: `inv-${q.quoteNumber}`,
+        id: `inv-${q.quoteNumber}`,
+        invoiceNumber: `INV-${q.quoteNumber.replace('Q-', '')}`,
+        customer: q.customerName,
+        amount: `$${Number(q.totalAmount || 0).toLocaleString()}`,
+        status: 'Unpaid',
+        approvalStatus: 'APPROVED',
+        dueDate: 'Sep 25',
+        orderRef: q.quoteNumber,
+        deliveryStatus: 'Order Confirmed - Split Allocation Pending'
+      }));
+
+    const matchingInvoices = invoices.filter((inv) => {
+      const cleanRef = (inv.orderRef || '').replace(' (Recurring)', '').trim();
+      return confirmedQuoteRefs.has(cleanRef) || confirmedQuoteRefs.has(inv.invoiceNumber) || inv.quotationStatus === 'CONFIRMED';
+    });
+
+    return [...matchingInvoices, ...dynamicFromQuotes];
+  }, [invoices, quotationsList]);
 
   // Dynamically calculate status counts
   const counts = useMemo(() => {
-    const unpaid = invoices.filter((i) => (i.status || '').toLowerCase() === 'unpaid').length;
-    const paid = invoices.filter((i) => (i.status || '').toLowerCase() === 'paid').length;
-    const pendingApproval = invoices.filter((i) =>
+    const unpaid = confirmedInvoices.filter((i) => (i.status || '').toLowerCase() === 'unpaid').length;
+    const paid = confirmedInvoices.filter((i) => (i.status || '').toLowerCase() === 'paid').length;
+    const pendingApproval = confirmedInvoices.filter((i) =>
       ['PENDING_FINANCE', 'PENDING_APPROVAL'].includes(i.approvalStatus)
     ).length;
     return { unpaid, paid, pendingApproval };
-  }, [invoices]);
+  }, [confirmedInvoices]);
 
   const filteredInvoices = useMemo(() => {
-    if (filter === 'ALL') return invoices;
-    if (filter === 'Unpaid') return invoices.filter((inv) => (inv.status || '').toLowerCase() === 'unpaid');
-    if (filter === 'Paid') return invoices.filter((inv) => (inv.status || '').toLowerCase() === 'paid');
-    if (filter === 'PendingApproval') {
-      return invoices.filter((inv) => ['PENDING_FINANCE', 'PENDING_APPROVAL'].includes(inv.approvalStatus));
-    }
-    return invoices;
-  }, [invoices, filter]);
+    return confirmedInvoices.filter((inv) => {
+      let matchesFilter = true;
+      if (filter === 'Unpaid') matchesFilter = (inv.status || '').toLowerCase() === 'unpaid';
+      else if (filter === 'Paid') matchesFilter = (inv.status || '').toLowerCase() === 'paid';
+      else if (filter === 'PendingApproval') {
+        matchesFilter = ['PENDING_FINANCE', 'PENDING_APPROVAL'].includes(inv.approvalStatus);
+      }
+
+      let matchesSearch = true;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        matchesSearch = (inv.invoiceNumber || '').toLowerCase().includes(q) || (inv.customer || '').toLowerCase().includes(q);
+      }
+
+      return matchesFilter && matchesSearch;
+    });
+  }, [confirmedInvoices, filter, searchQuery]);
 
   const handleRowClick = (invId) => {
     navigate(`/invoices/${invId}`);
@@ -96,44 +151,70 @@ const InvoicesList = () => {
         </div>
       </div>
 
-      {/* Status Badges / Filter Pills */}
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          onClick={() => setFilter(filter === 'Unpaid' ? 'ALL' : 'Unpaid')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-xs transition-transform active:scale-95 cursor-pointer ${
-            filter === 'Unpaid' ? 'ring-2 ring-rose-900 bg-rose-700' : 'bg-rose-600 hover:bg-rose-700'
-          }`}
-        >
-          {counts.unpaid} Unpaid
-        </button>
-
-        <button
-          onClick={() => setFilter(filter === 'Paid' ? 'ALL' : 'Paid')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-xs transition-transform active:scale-95 cursor-pointer ${
-            filter === 'Paid' ? 'ring-2 ring-emerald-900 bg-emerald-700' : 'bg-emerald-600 hover:bg-emerald-700'
-          }`}
-        >
-          {counts.paid} Paid
-        </button>
-
-        <button
-          onClick={() => setFilter(filter === 'PendingApproval' ? 'ALL' : 'PendingApproval')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-xs transition-transform active:scale-95 cursor-pointer ${
-            filter === 'PendingApproval' ? 'ring-2 ring-blue-900 bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          <ShieldAlert className="w-3.5 h-3.5 inline-block mr-1" />
-          {counts.pendingApproval} Pending Approval
-        </button>
-
-        {filter !== 'ALL' && (
+      {/* Status Badges / Filter Pills & Search Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-xl border border-[var(--steel-line)] shadow-xs">
+        <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={() => setFilter('ALL')}
-            className="text-xs text-[var(--teal)] underline font-medium ml-2 cursor-pointer"
+            onClick={() => setFilter(filter === 'Unpaid' ? 'ALL' : 'Unpaid')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              filter === 'Unpaid'
+                ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+            }`}
           >
-            Show All
+            {counts.unpaid} Unpaid
           </button>
-        )}
+
+          <button
+            onClick={() => setFilter(filter === 'Paid' ? 'ALL' : 'Paid')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              filter === 'Paid'
+                ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+            }`}
+          >
+            {counts.paid} Paid
+          </button>
+
+          <button
+            onClick={() => setFilter(filter === 'PendingApproval' ? 'ALL' : 'PendingApproval')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              filter === 'PendingApproval'
+                ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+            }`}
+          >
+            {counts.pendingApproval} Pending Approval
+          </button>
+
+          {filter !== 'ALL' && (
+            <button
+              onClick={() => setFilter('ALL')}
+              className="text-xs text-slate-700 hover:text-slate-950 underline font-semibold ml-2 cursor-pointer"
+            >
+              Show All
+            </button>
+          )}
+        </div>
+
+        {/* Search Input Box */}
+        <div className="w-full sm:w-64 relative">
+          <input
+            type="text"
+            placeholder="Search Invoice # or Customer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-3 py-1.5 border border-[var(--steel-line)] rounded-lg text-xs font-medium focus:outline-2 focus:outline-[var(--teal)] bg-[var(--paper-dim)]/50"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Table */}

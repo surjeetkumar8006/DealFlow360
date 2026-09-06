@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Warehouse, Package, Split, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Warehouse, Package, Split, AlertTriangle, CheckCircle2, ArrowRight, Search } from 'lucide-react';
 import api from '../../services/api';
 
 const FulfillmentSplitting = () => {
@@ -20,6 +20,9 @@ const FulfillmentSplitting = () => {
   ]);
 
   const [loading, setLoading] = useState(false);
+  const [stockSearch, setStockSearch] = useState('');
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
 
   useEffect(() => {
     const fetchFulfillmentData = async () => {
@@ -46,6 +49,31 @@ const FulfillmentSplitting = () => {
     fetchFulfillmentData();
   }, []);
 
+  const filteredStock = useMemo(() => {
+    if (!stockSearch) return stockInventory;
+    const q = stockSearch.toLowerCase();
+    return stockInventory.filter(
+      (s) =>
+        (s.warehouse || '').toLowerCase().includes(q) ||
+        (s.product || '').toLowerCase().includes(q)
+    );
+  }, [stockInventory, stockSearch]);
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter((ord) => {
+      const matchStatus =
+        orderStatusFilter === 'ALL' ||
+        (ord.status || '').toLowerCase() === orderStatusFilter.toLowerCase();
+      const q = orderSearch.toLowerCase();
+      const matchSearch =
+        !orderSearch ||
+        (ord.orderNumber || '').toLowerCase().includes(q) ||
+        (ord.customer || '').toLowerCase().includes(q) ||
+        (ord.warehouses || '').toLowerCase().includes(q);
+      return matchStatus && matchSearch;
+    });
+  }, [orders, orderStatusFilter, orderSearch]);
+
   const handleRowClick = (orderId) => {
     navigate(`/fulfillment/${orderId}`);
   };
@@ -62,6 +90,24 @@ const FulfillmentSplitting = () => {
         </p>
       </div>
 
+      {/* Stock Inventory Filter Header */}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-[var(--text)] flex items-center gap-2">
+          <Warehouse className="w-4 h-4 text-[var(--teal)] shrink-0" />
+          Depot Inventory ({filteredStock.length})
+        </h2>
+        <div className="relative min-w-[220px]">
+          <input
+            type="text"
+            value={stockSearch}
+            onChange={(e) => setStockSearch(e.target.value)}
+            placeholder="Search Warehouse or Product..."
+            className="w-full pl-8 pr-3 py-1 bg-white dark:bg-slate-900 border border-[var(--steel-line)] rounded-xl text-xs text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]/30"
+          />
+          <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2.5 top-2" />
+        </div>
+      </div>
+
       {/* Table 1: Warehouse Stock Table matching Wireframe 7 */}
       <div className="panel-card overflow-hidden">
         <div className="overflow-x-auto">
@@ -76,7 +122,7 @@ const FulfillmentSplitting = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--paper-dim)]">
-              {stockInventory.map((row) => (
+              {filteredStock.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50/60 transition-colors">
                   <td className="py-3.5 px-4 font-semibold text-[var(--text)] flex items-center gap-2">
                     <Warehouse className="w-4 h-4 text-[var(--teal)] shrink-0" />
@@ -95,9 +141,38 @@ const FulfillmentSplitting = () => {
 
       {/* Section 2: Orders Awaiting Fulfillment matching Wireframe 7 */}
       <div className="space-y-3 pt-2">
-        <h2 className="text-base font-semibold text-[var(--teal)] flex items-center gap-2">
-          <Package className="w-4.5 h-4.5" /> Orders Awaiting Fulfillment
-        </h2>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-[var(--teal)] flex items-center gap-2">
+            <Package className="w-4.5 h-4.5" /> Orders Awaiting Fulfillment ({filteredOrders.length})
+          </h2>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {['ALL', 'Split Pending', 'Split Allocated', 'Pending Review', 'Backorder'].map((st) => (
+              <button
+                key={st}
+                onClick={() => setOrderStatusFilter(st)}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  orderStatusFilter === st
+                    ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+
+            <div className="relative min-w-[200px]">
+              <input
+                type="text"
+                value={orderSearch}
+                onChange={(e) => setOrderSearch(e.target.value)}
+                placeholder="Search Order # or Customer..."
+                className="w-full pl-8 pr-3 py-1 bg-white dark:bg-slate-900 border border-[var(--steel-line)] rounded-xl text-xs text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]/30"
+              />
+              <Search className="w-3.5 h-3.5 text-[var(--text-muted)] absolute left-2.5 top-2" />
+            </div>
+          </div>
+        </div>
 
         <div className="panel-card overflow-hidden">
           <div className="overflow-x-auto">
@@ -111,7 +186,7 @@ const FulfillmentSplitting = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--paper-dim)]">
-                {orders.map((ord) => (
+                {filteredOrders.map((ord) => (
                   <tr
                     key={ord.id}
                     onClick={() => handleRowClick(ord.id)}

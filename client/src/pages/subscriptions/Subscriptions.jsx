@@ -45,6 +45,7 @@ const Subscriptions = () => {
   }, [subscriptions]);
 
   const [filter, setFilter] = useState('ALL'); // 'ALL' | 'Active' | 'Paused' | 'Cancelled'
+  const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   
   // Selection lists & form state
@@ -92,9 +93,16 @@ const Subscriptions = () => {
     fetchCustomersAndProducts();
   }, []);
 
-  const filteredSubs = filter === 'ALL'
-    ? subscriptions
-    : subscriptions.filter(s => s.status.toLowerCase() === filter.toLowerCase());
+  const filteredSubs = useMemo(() => {
+    return subscriptions.filter((s) => {
+      const matchFilter = filter === 'ALL' || (s.status || '').toLowerCase() === filter.toLowerCase();
+      const matchSearch = !searchTerm || 
+        (s.customer || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.plan || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.id || '').toLowerCase().includes(searchTerm.toLowerCase());
+      return matchFilter && matchSearch;
+    });
+  }, [subscriptions, filter, searchTerm]);
 
   const handleRowClick = (subId) => {
     navigate(`/subscriptions/${subId}`);
@@ -145,43 +153,65 @@ const Subscriptions = () => {
         </p>
       </div>
 
-      {/* Status Badges / Filter Pills matching Wireframe 9 */}
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          onClick={() => setFilter(filter === 'Active' ? 'ALL' : 'Active')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-xs transition-transform active:scale-95 ${
-            filter === 'Active' ? 'ring-2 ring-emerald-900 bg-emerald-700' : 'bg-emerald-600 hover:bg-emerald-700'
-          }`}
-        >
-          {counts.active} Active
-        </button>
-
-        <button
-          onClick={() => setFilter(filter === 'Paused' ? 'ALL' : 'Paused')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-xs transition-transform active:scale-95 ${
-            filter === 'Paused' ? 'ring-2 ring-amber-900 bg-amber-700' : 'bg-amber-600 hover:bg-amber-700'
-          }`}
-        >
-          {counts.paused} Paused
-        </button>
-
-        <button
-          onClick={() => setFilter(filter === 'Cancelled' ? 'ALL' : 'Cancelled')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold text-white shadow-xs transition-transform active:scale-95 ${
-            filter === 'Cancelled' ? 'ring-2 ring-rose-900 bg-rose-700' : 'bg-rose-600 hover:bg-rose-700'
-          }`}
-        >
-          {counts.cancelled} Cancelled
-        </button>
-
-        {filter !== 'ALL' && (
+      {/* Filter Bar: Search Input + Status Filter Pills */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setFilter('ALL')}
-            className="text-xs text-[var(--teal)] underline font-medium ml-2"
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              filter === 'ALL'
+                ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+            }`}
           >
-            Show All
+            All ({subscriptions.length})
           </button>
-        )}
+          <button
+            onClick={() => setFilter(filter === 'Active' ? 'ALL' : 'Active')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              filter === 'Active'
+                ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+            }`}
+          >
+            {counts.active} Active
+          </button>
+
+          <button
+            onClick={() => setFilter(filter === 'Paused' ? 'ALL' : 'Paused')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              filter === 'Paused'
+                ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+            }`}
+          >
+            {counts.paused} Paused
+          </button>
+
+          <button
+            onClick={() => setFilter(filter === 'Cancelled' ? 'ALL' : 'Cancelled')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              filter === 'Cancelled'
+                ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs font-extrabold'
+                : 'bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-300 font-semibold'
+            }`}
+          >
+            {counts.cancelled} Cancelled
+          </button>
+        </div>
+
+        <div className="relative min-w-[240px] sm:min-w-[280px]">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search Customer or Plan..."
+            className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-900 border border-[var(--steel-line)] rounded-xl text-xs text-[var(--text)] focus:outline-none focus:ring-2 focus:ring-[var(--teal)]/30"
+          />
+          <svg className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
       </div>
 
       {/* Table matching Wireframe 9 */}

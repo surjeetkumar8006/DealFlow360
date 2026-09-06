@@ -216,10 +216,10 @@ const InvoiceDetail = () => {
       <div className="panel-card py-6 px-4 sm:px-8">
         <div className="flex items-center justify-between relative max-w-3xl mx-auto">
           {/* Background Connecting Line */}
-          <div className="absolute top-1/2 left-8 right-8 -translate-y-1/2 h-0.5 bg-slate-300 dark:bg-slate-700 z-0"></div>
+          <div className="absolute top-1/2 left-8 right-8 -translate-y-1/2 h-1.5 bg-slate-300 rounded-full z-0"></div>
 
           {steps.map((step, idx) => (
-            <div key={idx} className="relative z-10 flex flex-col items-center gap-2 group">
+            <div key={idx} className="relative z-10 flex flex-col items-center gap-2 group bg-white px-3">
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 shadow-sm ${
                   step.completed

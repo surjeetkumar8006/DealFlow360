@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -208,16 +208,97 @@ const QuotationsList = () => {
     }
   };
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTierFilter, setSelectedTierFilter] = useState('ALL');
+
+  const filteredQuotationsList = useMemo(() => {
+    return quotationsList.filter((q) => {
+      let matchesSearch = true;
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        matchesSearch =
+          (q.quoteNumber || '').toLowerCase().includes(query) ||
+          (q.customerName || '').toLowerCase().includes(query) ||
+          (q.salesRep || '').toLowerCase().includes(query);
+      }
+
+      let matchesTier = true;
+      if (selectedTierFilter !== 'ALL') {
+        matchesTier = (q.customerTier || '').toLowerCase() === selectedTierFilter.toLowerCase();
+      }
+
+      return matchesSearch && matchesTier;
+    });
+  }, [quotationsList, searchQuery, selectedTierFilter]);
+
   return (
     <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header matching Wireframe */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--text)] tracking-tight mb-1">
-          Quotations (List)
-        </h1>
-        <p className="text-sm text-[var(--text-muted)]">
-          Every quotation in the system, one row per quotation, click a row to open it
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[var(--text)] tracking-tight mb-1">
+            Quotations (List)
+          </h1>
+          <p className="text-sm text-[var(--text-muted)]">
+            Every quotation in the system, one row per quotation, click a row to open it
+          </p>
+        </div>
+
+        {/* View Mode Toggle & Actions */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleToggleView}
+            className="px-3.5 py-1.5 bg-white border border-[var(--steel-line)] text-[var(--text)] text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 hover:bg-slate-50 transition-all cursor-pointer"
+          >
+            {viewMode === 'BOARD' ? <Table className="w-3.5 h-3.5 text-[var(--teal)]" /> : <LayoutGrid className="w-3.5 h-3.5 text-[var(--teal)]" />}
+            <span>{viewMode === 'BOARD' ? 'Switch to Table View' : 'Switch to Board View'}</span>
+          </button>
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="btn-primary-gold text-xs font-bold py-1.5 px-3.5 rounded-lg flex items-center gap-1.5 shadow-xs"
+          >
+            <Plus className="w-4 h-4" /> + New Quotation
+          </button>
+        </div>
+      </div>
+
+      {/* Interactive Search & Tier Filter Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-[var(--steel-line)] shadow-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider font-mono mr-1">Filter Tier:</span>
+          {['ALL', 'Bronze', 'Silver', 'Gold'].map((tier) => (
+            <button
+              key={tier}
+              onClick={() => setSelectedTierFilter(tier)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
+                selectedTierFilter === tier
+                  ? 'bg-slate-200 text-slate-900 border border-slate-300 shadow-2xs'
+                  : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-semibold'
+              }`}
+            >
+              {tier === 'ALL' ? 'All Tiers' : `${tier} Tier`}
+            </button>
+          ))}
+        </div>
+
+        <div className="w-full sm:w-64 relative">
+          <input
+            type="text"
+            placeholder="Search Quote # or Customer..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-3.5 py-1.5 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[var(--teal)]/30 bg-white shadow-xs"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Main View: Board View (Kanban) or Table View */}
@@ -225,7 +306,7 @@ const QuotationsList = () => {
         /* Kanban Board View (5 Columns matching wireframe) */
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-start">
           {KANBAN_STAGES.map((stage) => {
-            const columnQuotes = quotationsList.filter((q) => {
+            const columnQuotes = filteredQuotationsList.filter((q) => {
               const statusStr = (q.status || '').toUpperCase();
               if (stage.id === 'PENDING_APPROVAL') {
                 return ['PENDING_APPROVAL', 'PENDING_FINANCE', 'PENDING APPROVAL'].includes(statusStr);

@@ -113,9 +113,9 @@ const getDashboardStats = async (req, res) => {
       },
       recentActivity: formattedActivities.slice(0, 10),
       discountTiers: [
-        { tier: 'Bronze', maxDiscount: 5, color: '#B08D57' },
-        { tier: 'Silver', maxDiscount: 10, color: '#B7BAC2' },
-        { tier: 'Gold', maxDiscount: 15, color: '#B8863B' },
+        { tier: 'Bronze', maxDiscount: 5, color: '#1E293B' },
+        { tier: 'Silver', maxDiscount: 10, color: '#475569' },
+        { tier: 'Gold', maxDiscount: 15, color: '#64748B' },
       ],
       note: 'Category ceilings can be stricter than the customer\'s tier — the blended risk score routes approval based on whichever limit a line actually breaks.'
     };
