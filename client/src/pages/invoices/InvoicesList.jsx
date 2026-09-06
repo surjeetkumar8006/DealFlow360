@@ -6,12 +6,14 @@ import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 const DEFAULT_INVOICES = [
-  { id: 'inv-1006', invoiceNumber: 'INV-1006', customer: 'Orion Ltd', amount: '$41,000', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25' },
-  { id: 'inv-1042', invoiceNumber: 'INV-1042', customer: 'Acme Corp', amount: '$2,730', status: 'Unpaid', approvalStatus: 'PENDING_FINANCE', dueDate: 'Sep 10' },
+  { id: 'inv-1003', invoiceNumber: 'INV-1003', customer: 'Beta Industries', amount: '$24,148', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25' },
+  { id: 'inv-9635', invoiceNumber: 'INV-9635', customer: 'Test', amount: '$30,448', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25' },
+  { id: 'inv-1042', invoiceNumber: 'INV-1042', customer: 'Acme Corp', amount: '$2,730', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 10' },
   { id: 'inv-6685', invoiceNumber: 'INV-6685', customer: 'New Prod.', amount: '$34,600', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25' },
-  { id: 'inv-1043', invoiceNumber: 'INV-1043', customer: 'Acme Corp', amount: '$46', status: 'Paid', approvalStatus: 'AUTO_APPROVED', dueDate: 'Sep 15' },
   { id: 'inv-1038', invoiceNumber: 'INV-1038', customer: 'Nova Retail', amount: '$9,750', status: 'Paid', approvalStatus: 'APPROVED', dueDate: 'Aug 30' },
-  { id: 'inv-1035', invoiceNumber: 'INV-1035', customer: 'Beta Industries', amount: '$1,200', status: 'Unpaid', approvalStatus: 'PENDING_APPROVAL', dueDate: 'Oct 05' }
+  { id: 'inv-1006', invoiceNumber: 'INV-1006', customer: 'Orion Ltd', amount: '$41,000', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Sep 25' },
+  { id: 'inv-1043', invoiceNumber: 'INV-1043', customer: 'Acme Corp', amount: '$46', status: 'Paid', approvalStatus: 'AUTO_APPROVED', dueDate: 'Sep 15' },
+  { id: 'inv-1035', invoiceNumber: 'INV-1035', customer: 'Beta Industries', amount: '$1,200', status: 'Unpaid', approvalStatus: 'APPROVED', dueDate: 'Oct 05' }
 ];
 
 const InvoicesList = () => {

@@ -54,11 +54,176 @@ const syncConfirmedQuotationToInvoice = async (quote) => {
   }
 };
 
+const ensureDefaultQuotationsSeeded = async () => {
+  try {
+    const existing = await Quotation.find();
+    const defaultQuotes = [
+      {
+        quoteNumber: 'Q-1042',
+        customerName: 'Acme Corp',
+        customerTier: 'Silver',
+        salesRep: 'Surjeet Kumar',
+        priceList: 'Standard Enterprise 2026',
+        totalAmount: 2970,
+        discountPercentage: 14,
+        riskScore: 18.5,
+        riskLevel: 'HIGH',
+        status: 'PENDING_APPROVAL',
+        ceilingViolation: 'Onsite Setup Service discount 18% exceeds line limit ceiling of 10% by 8 points.',
+        lineItems: [
+          { id: 'l-1', product: 'Laptop Pro 14', qty: 2, price: 1200, discount: 12, limit: 15 },
+          { id: 'l-2', product: 'Onsite Setup Service', qty: 1, price: 450, discount: 18, limit: 10 },
+          { id: 'l-3', product: 'Docking Station', qty: 1, price: 180, discount: 10, limit: 15 }
+        ]
+      },
+      {
+        quoteNumber: 'Q-1003',
+        customerName: 'Beta Industries',
+        customerTier: 'Gold',
+        salesRep: 'Rahul Sharma',
+        priceList: 'Enterprise Partner 2026',
+        totalAmount: 24148,
+        discountPercentage: 18,
+        riskScore: 18.5,
+        riskLevel: 'HIGH',
+        status: 'PENDING_APPROVAL',
+        ceilingViolation: 'Setup Service discount given is 18% (Allowed Gold tier ceiling is 15%). Exceeds threshold by 3 points.',
+        lineItems: [
+          { id: 'l-12', product: 'Enterprise Server Node', qty: 1, price: 15000, discount: 15, limit: 15 },
+          { id: 'l-13', product: 'Onsite Setup Service', qty: 1, price: 11156, discount: 18, limit: 15 }
+        ]
+      },
+      {
+        quoteNumber: 'Q-9635',
+        customerName: 'Test',
+        customerTier: 'Gold',
+        salesRep: 'Surjeet Kumar',
+        priceList: 'Enterprise Partner 2026',
+        totalAmount: 34600,
+        discountPercentage: 12,
+        riskScore: 9.5,
+        riskLevel: 'MEDIUM',
+        status: 'APPROVED',
+        ceilingViolation: null,
+        lineItems: [
+          { id: 'l-96', product: 'Enterprise Server Node Cluster', qty: 2, price: 17300, discount: 12, limit: 15 }
+        ]
+      },
+      {
+        quoteNumber: 'Q-1004',
+        customerName: 'Nova Retail',
+        customerTier: 'Gold',
+        salesRep: 'Priya Verma',
+        priceList: 'Standard Retail 2026',
+        totalAmount: 9750,
+        discountPercentage: 10,
+        riskScore: 5.5,
+        riskLevel: 'LOW',
+        status: 'APPROVED',
+        ceilingViolation: null,
+        lineItems: [
+          { id: 'l-14', product: 'POS Hardware Terminal', qty: 5, price: 1950, discount: 10, limit: 15 }
+        ]
+      },
+      {
+        quoteNumber: 'Q-1006',
+        customerName: 'Orion Ltd',
+        customerTier: 'Gold',
+        salesRep: 'Priya Verma',
+        priceList: 'Enterprise Partner 2026',
+        totalAmount: 41000,
+        discountPercentage: 15,
+        riskScore: 9.8,
+        riskLevel: 'MEDIUM',
+        status: 'CONFIRMED',
+        ceilingViolation: null,
+        lineItems: [
+          { id: 'l-16', product: 'Data Center Infrastructure Bundle', qty: 1, price: 41000, discount: 15, limit: 15 }
+        ]
+      },
+      {
+        quoteNumber: 'Q-6685',
+        customerName: 'New Prod.',
+        customerTier: 'Gold',
+        salesRep: 'Priya Verma',
+        priceList: 'Enterprise Partner 2026',
+        totalAmount: 34600,
+        discountPercentage: 10,
+        riskScore: 6.2,
+        riskLevel: 'LOW',
+        status: 'APPROVED',
+        ceilingViolation: null,
+        lineItems: [
+          { id: 'l-66', product: 'High Performance Infrastructure Package', qty: 1, price: 34600, discount: 10, limit: 15 }
+        ]
+      },
+      {
+        quoteNumber: 'Q-1005',
+        customerName: 'Zenith Co',
+        customerTier: 'Silver',
+        salesRep: 'Surjeet Kumar',
+        priceList: 'Standard Enterprise 2026',
+        totalAmount: 15300,
+        discountPercentage: 12,
+        riskScore: 11.2,
+        riskLevel: 'MEDIUM',
+        status: 'NEGOTIATION',
+        ceilingViolation: 'Portal negotiation active: Customer requested 12% discount.',
+        lineItems: [
+          { id: 'l-15', product: 'Storage Array Appliance', qty: 2, price: 7650, discount: 12, limit: 10 }
+        ]
+      },
+      {
+        quoteNumber: 'Q-1002',
+        customerName: 'Delta LLC',
+        customerTier: 'Bronze',
+        salesRep: 'Rahul Sharma',
+        priceList: 'Standard Retail 2026',
+        totalAmount: 3200,
+        discountPercentage: 4,
+        riskScore: 2.1,
+        riskLevel: 'LOW',
+        status: 'DRAFT',
+        ceilingViolation: null,
+        lineItems: [
+          { id: 'l-11', product: 'Standard Support Package', qty: 1, price: 3200, discount: 4, limit: 5 }
+        ]
+      },
+      {
+        quoteNumber: 'Q-1001',
+        customerName: 'Acme Corp',
+        customerTier: 'Silver',
+        salesRep: 'Surjeet Kumar',
+        priceList: 'Standard Enterprise 2026',
+        totalAmount: 12400,
+        discountPercentage: 8,
+        riskScore: 4.2,
+        riskLevel: 'LOW',
+        status: 'DRAFT',
+        ceilingViolation: null,
+        lineItems: [
+          { id: 'l-10', product: 'Cloud Workstation License (Monthly)', qty: 10, price: 1240, discount: 8, limit: 15 }
+        ]
+      }
+    ];
+
+    for (const q of defaultQuotes) {
+      const exists = existing.find((e) => (e.quoteNumber || '').toLowerCase() === q.quoteNumber.toLowerCase());
+      if (!exists) {
+        await Quotation.create(q);
+      }
+    }
+  } catch (e) {
+    console.error('Error auto-seeding default quotations:', e.message);
+  }
+};
+
 // @desc Get all quotations from DB
 // @route GET /api/quotations
 // @access Private
 const getQuotations = async (req, res) => {
   try {
+    await ensureDefaultQuotationsSeeded();
     const quotations = await Quotation.find().sort({ createdAt: -1 });
     res.json({
       success: true,
@@ -304,21 +469,31 @@ const deleteQuotation = async (req, res) => {
     const deletedQuoteNumber = quote.quoteNumber;
     const deletedIdStr = quote._id.toString();
 
-    // 1. Delete from MongoDB collection
+    // 1. Delete from Quotation MongoDB collection
     await Quotation.deleteOne({ _id: quote._id });
 
-    // 2. Delete corresponding invoice if any
-    await Invoice.deleteOne({ orderRef: deletedQuoteNumber });
+    // 2. Delete ALL corresponding order & recurring invoices from Invoice MongoDB collection
+    await Invoice.deleteMany({
+      $or: [
+        { orderRef: deletedQuoteNumber },
+        { orderRef: { $regex: new RegExp(deletedQuoteNumber, 'i') } },
+        { invoiceNumber: `INV-${deletedQuoteNumber.replace('Q-', '')}` }
+      ]
+    });
 
-    // 3. Sync with approvalController approvalsStore if present
+    // 3. Purge from approvalsStore in approvalController
     try {
-      const { approvalsStore } = require('./approvalController');
-      const appIdx = approvalsStore.findIndex(
-        (a) => String(a._id) === String(deletedIdStr) || String(a._id) === String(id) || a.quoteNumber === deletedQuoteNumber
-      );
-      if (appIdx !== -1) {
-        approvalsStore.splice(appIdx, 1);
+      const { approvalsStore, syncDBQuotationsToApprovalsStore } = require('./approvalController');
+      for (let i = approvalsStore.length - 1; i >= 0; i--) {
+        if (
+          String(approvalsStore[i]._id) === String(deletedIdStr) ||
+          String(approvalsStore[i]._id) === String(id) ||
+          (approvalsStore[i].quoteNumber || '').toLowerCase() === deletedQuoteNumber.toLowerCase()
+        ) {
+          approvalsStore.splice(i, 1);
+        }
       }
+      await syncDBQuotationsToApprovalsStore();
     } catch (e) {
       // Ignore
     }
@@ -326,14 +501,14 @@ const deleteQuotation = async (req, res) => {
     // 4. Log activity
     try {
       const { addRecentActivity } = require('./dashboardController');
-      addRecentActivity(`Quotation ${deletedQuoteNumber} deleted`, 'QUOTATION', '#9E2A2B');
+      addRecentActivity(`Quotation ${deletedQuoteNumber} purged everywhere`, 'QUOTATION', '#9E2A2B');
     } catch (e) {
       // Ignore
     }
 
     res.json({
       success: true,
-      message: `Quotation ${deletedQuoteNumber} deleted successfully!`,
+      message: `Quotation ${deletedQuoteNumber} deleted everywhere (Quotations, Approvals, and Invoices)!`,
       data: { id: deletedIdStr, quoteNumber: deletedQuoteNumber }
     });
   } catch (error) {

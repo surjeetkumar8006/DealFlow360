@@ -153,7 +153,7 @@ const getPendingApprovals = async (req, res) => {
 
     const pendingCount = approvalsStore.filter((a) => a.status === 'PENDING_APPROVAL' || a.status === 'PENDING_FINANCE').length;
     const returnedCount = approvalsStore.filter((a) => a.status === 'REVISION_REQUESTED').length;
-    const approvedCount = approvalsStore.filter((a) => a.status === 'APPROVED' || a.status === 'CONFIRMED').length;
+    const approvedCount = approvalsStore.filter((a) => a.status === 'APPROVED').length;
 
     res.json({
       success: true,
