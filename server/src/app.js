@@ -26,7 +26,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check Endpoint
+// Health Check & Root Endpoints
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    message: 'DealFlow360 API Server Operational',
+    health: '/api/health',
+    timestamp: new Date()
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ success: true, status: 'ok', message: 'DealFlow360 API Server Operational', timestamp: new Date() });
 });
